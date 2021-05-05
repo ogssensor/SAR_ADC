@@ -14,7 +14,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-CARAVEL_ROOT?=caravel
+CARAVEL_ROOT?=$(PWD)/caravel
+PRECHECK_ROOT?=${HOME}/open_mpw_precheck
 SIM ?= RTL
 
 # Install lite version of caravel, (1): caravel-lite, (0): caravel
@@ -23,11 +24,11 @@ CARAVEL_LITE?=1
 ifeq ($(CARAVEL_LITE),1) 
 	CARAVEL_NAME := caravel-lite
 	CARAVEL_REPO := https://github.com/efabless/caravel-lite 
-	CARAVEL_COMMIT := main
+	CARAVEL_BRANCH := main
 else
 	CARAVEL_NAME := caravel
 	CARAVEL_REPO := https://github.com/efabless/caravel 
-	CARAVEL_COMMIT := master
+	CARAVEL_BRANCH := master
 endif
 
 # Install caravel as submodule, (1): submodule, (0): clone
@@ -55,7 +56,7 @@ DV_PATTERNS = $(foreach dv, $(PATTERNS), verify-$(dv))
 TARGET_PATH=$(shell pwd)
 PDK_PATH=${PDK_ROOT}/sky130A
 VERIFY_COMMAND="cd ${TARGET_PATH}/verilog/dv/$* && export SIM=${SIM} && make"
-$(DV_PATTERNS): verify-% : 
+$(DV_PATTERNS): verify-% : ./verilog/dv/% 
 	docker run -v ${TARGET_PATH}:${TARGET_PATH} -v ${PDK_PATH}:${PDK_PATH} \
                 -v ${CARAVEL_ROOT}:${CARAVEL_ROOT} \
                 -e TARGET_PATH=${TARGET_PATH} -e PDK_PATH=${PDK_PATH} \
@@ -74,34 +75,42 @@ $(BLOCKS): %:
 install:
 ifeq ($(SUBMODULE),1)
 	@echo "Installing $(CARAVEL_NAME) as a submodule.."
-	@if [ ! -d $(CARAVEL_ROOT) ]; then git submodule add --name $(CARAVEL_NAME) $(CARAVEL_REPO) $(CARAVEL_ROOT); fi
+# Convert CARAVEL_ROOT to relative path because .gitmodules doesn't accept '/'
+	$(eval CARAVEL_PATH := $(shell realpath --relative-to=$(shell pwd) $(CARAVEL_ROOT)))
+	@if [ ! -d $(CARAVEL_ROOT) ]; then git submodule add --name $(CARAVEL_NAME) $(CARAVEL_REPO) $(CARAVEL_PATH); fi
 	@git submodule update --init
-	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_HASH)
+	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_BRANCH)
 	$(MAKE) simlink
 else
 	@echo "Installing $(CARAVEL_NAME).."
 	@git clone $(CARAVEL_REPO) $(CARAVEL_ROOT)
-	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_HASH)
+	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_BRANCH)
 endif
 
 # Create symbolic links to caravel's main files
 .PHONY: simlink
 simlink: check-caravel
+### Symbolic links relative path to $CARAVEL_ROOT 
+	$(eval MAKEFILE_PATH := $(shell realpath --relative-to=openlane $(CARAVEL_ROOT)/openlane/Makefile))
+	$(eval PIN_CFG_PATH  := $(shell realpath --relative-to=openlane/user_project_wrapper $(CARAVEL_ROOT)/openlane/user_project_wrapper_empty/pin_order.cfg))
 	mkdir -p openlane
 	mkdir -p openlane/user_project_wrapper
 	cd openlane &&\
-	ln -sf ../$(CARAVEL_ROOT)/openlane/Makefile Makefile
+	ln -sf $(MAKEFILE_PATH) Makefile
 	cd openlane/user_project_wrapper &&\
-	ln -sf ../../$(CARAVEL_ROOT)/openlane/user_project_wrapper_empty/pin_order.cfg pin_order.cfg
+	ln -sf $(PIN_CFG_PATH) pin_order.cfg
 
 # Update Caravel
 .PHONY: update_caravel
 update_caravel: check-caravel
 ifeq ($(SUBMODULE),1)
-	@git submodule update --init
+	@git submodule update --init --recursive
+	cd $(CARAVEL_ROOT) && \
+	git checkout $(CARAVEL_BRANCH) && \
+	git pull
 else
 	cd $(CARAVEL_ROOT)/ && \
-		git checkout $(CARAVEL_COMMIT) && \
+		git checkout $(CARAVEL_BRANCH) && \
 		git pull
 endif
 
@@ -109,10 +118,12 @@ endif
 .PHONY: uninstall
 uninstall: 
 ifeq ($(SUBMODULE),1)
+	git config -f .gitmodules --remove-section "submodule.$(CARAVEL_NAME)"
+	git add .gitmodules
 	git submodule deinit -f $(CARAVEL_ROOT)
-	sed -ie '/\[submodule \"caravel\"\]/,/\url =/d' .gitmodules
+	git rm --cached $(CARAVEL_ROOT)
 	rm -rf .git/modules/$(CARAVEL_NAME)
-	git rm -f $(CARAVEL_ROOT)
+	rm -rf $(CARAVEL_ROOT)
 else
 	rm -rf $(CARAVEL_ROOT)
 endif
@@ -121,6 +132,25 @@ endif
 .PHONY: openlane
 openlane: 
 	cd openlane && $(MAKE) openlane
+
+# Install Pre-check
+# Default installs to the user home directory, override by "export PRECHECK_ROOT=<precheck-installation-path>"
+.PHONY: precheck
+precheck:
+	@git clone https://github.com/efabless/open_mpw_precheck.git --depth=1 $(PRECHECK_ROOT)
+	@docker pull efabless/open_mpw_precheck:latest
+
+.PHONY: run-precheck
+run-precheck: check-precheck check-pdk check-caravel
+	$(eval TARGET_PATH := $(shell pwd))
+	cd $(PRECHECK_ROOT) && \
+	docker run -v $(PRECHECK_ROOT):/usr/local/bin -v $(TARGET_PATH):$(TARGET_PATH) -v $(PDK_ROOT):$(PDK_ROOT) -v $(CARAVEL_ROOT):$(CARAVEL_ROOT) \
+	-u $(shell id -u $(USER)):$(shell id -g $(USER)) efabless/open_mpw_precheck:latest bash -c "python3 open_mpw_prechecker.py --pdk_root $(PDK_ROOT) --target_path $(TARGET_PATH) -rfc -c $(CARAVEL_ROOT) "
+
+# Install PDK using OL's Docker Image
+.PHONY: pdk-nonnative
+pdk-nonnative: skywater-pdk skywater-library skywater-timing open_pdks
+	docker run --rm -v $(PDK_ROOT):$(PDK_ROOT) -v $(pwd):/user_project -v $(CARAVEL_ROOT):$(CARAVEL_ROOT) -e CARAVEL_ROOT=$(CARAVEL_ROOT) -e PDK_ROOT=$(PDK_ROOT) -u $(shell id -u $(USER)):$(shell id -g $(USER)) efabless/openlane:current sh -c "cd $(CARAVEL_ROOT); make build-pdk; make gen-sources"
 
 # Clean 
 .PHONY: clean
@@ -133,3 +163,20 @@ check-caravel:
 		echo "Caravel Root: "$(CARAVEL_ROOT)" doesn't exists, please export the correct path before running make. "; \
 		exit 1; \
 	fi
+
+check-precheck:
+	@if [ ! -d "$(PRECHECK_ROOT)" ]; then \
+		echo "Pre-check Root: "$(PRECHECK_ROOT)" doesn't exists, please export the correct path before running make. "; \
+		exit 1; \
+	fi
+
+check-pdk:
+	@if [ ! -d "$(PDK_ROOT)" ]; then \
+		echo "PDK Root: "$(PDK_ROOT)" doesn't exists, please export the correct path before running make. "; \
+		exit 1; \
+	fi
+
+.PHONY: help
+help:
+	cd $(CARAVEL_ROOT) && $(MAKE) help 
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'

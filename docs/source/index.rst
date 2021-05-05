@@ -50,6 +50,11 @@ utilities like IO pads, logic analyzer probes, and wishbone port. The
 repo also demonstrates the recommended structure for the open-mpw
 shuttle projects.
 
+Prerequisites
+=============
+
+- Docker
+
 Install Caravel
 ===============
 
@@ -60,7 +65,9 @@ To setup caravel, run the following:
     # By default, CARAVEL_ROOT is set to $(pwd)/caravel
     # If you want to install caravel at a different location, run "export CARAVEL_ROOT=<caravel-path>"
     # Disable submodule installation if needed by, run "export SUBMODULE=0"
-
+    
+    git clone https://github.com/efabless/caravel_user_project.git
+    cd caravel_user_project
     make install
 
 To update the installed caravel to the latest, run:
@@ -129,7 +136,7 @@ For this sample project, the user macro makes use of:
 -  The LA probes for supplying an optional reset and clock signals and
    for setting an initial value for the count register.
 
--  The wishbeone port for reading/writing the count value through the
+-  The wishbone port for reading/writing the count value through the
    management SoC.
 
 Refer to `user\_project\_wrapper <verilog/rtl/user_project_wrapper.v>`__
@@ -145,18 +152,14 @@ for more information.
 
    </p>
 
-Running Full Chip Simulation
-============================
+Building the PDK 
+================
 
-First, you will need to install the simulation environment, by
+You have two options for building the pdk: 
 
-.. code:: bash
+- Build the pdk natively. 
 
-    make simenv
-
-This will pull a docker image with the needed tools installed.
-
-Then, you will need to build the pdk to obtain the verilog views.
+Make sure you have `Magic VLSI Layout Tool <http://opencircuitdesign.com/magic/index.html>`__ installed on your machine before building the pdk. 
 
 .. code:: bash
 
@@ -168,6 +171,30 @@ Then, you will need to build the pdk to obtain the verilog views.
     # if you do not set them, they default to the last verfied commits tested for this project
 
     make pdk
+
+- Build the pdk using openlane's docker image which has magic installed. 
+
+.. code:: bash
+
+    # set PDK_ROOT to the path you wish to use for the pdk
+    export PDK_ROOT=<pdk-installation-path>
+
+    # you can optionally specify skywater-pdk and open-pdks commit used
+    # by setting and exporting SKYWATER_COMMIT and OPEN_PDKS_COMMIT
+    # if you do not set them, they default to the last verfied commits tested for this project
+
+    make pdk-nonnative
+
+Running Full Chip Simulation
+============================
+
+First, you will need to install the simulation environment, by
+
+.. code:: bash
+
+    make simenv
+
+This will pull a docker image with the needed tools installed.
 
 Then, run the RTL and GL simulation by
 
@@ -181,33 +208,20 @@ Then, run the RTL and GL simulation by
     make verify-<dv-pattern>
 
 The verilog test-benches are under this directory
-`verilog/dv <verilog/dv>`__. For more information on setting up the
+`verilog/dv <https://github.com/efabless/caravel_user_project/tree/main/verilog/dv>`__. For more information on setting up the
 simulation environment and the available testbenches for this sample
-project, refer to `README <verilog/dv/README.md>`__.
+project, refer to `README <https://github.com/efabless/caravel_user_project/blob/main/verilog/dv/README.md>`__.
 
 Hardening the User Project Macro using Openlane
 ===============================================
 
-First, you will need to install the pdk by
+You will need to install openlane by running the following
 
 .. code:: bash
 
-    # set PDK_ROOT to the path you wish to use for the pdk
-    export PDK_ROOT=<pdk-installation-path>
-
-    # you can optionally specify skywater-pdk and open-pdks commit used
-    # by setting and exporting SKYWATER_COMMIT and OPEN_PDKS_COMMIT
-    # if you do not set them, they default to the last verfied commits tested for this project
-
-    make pdk
-
-Then, you will need to install openlane by
-
-.. code:: bash
-
-    export OPENLANE_ROOT=<openlane-installation-path>
-    export OPENLANE_TAG=v0.12
-    make openlane
+   export OPENLANE_ROOT=<openlane-installation-path>
+   export OPENLANE_TAG=<latest-openlane-tag>
+   make openlane
 
 For detailed instructions on how to install openlane and the pdk refer
 to
@@ -240,11 +254,88 @@ To reproduce hardening this project, run the following:
 
 .. code:: bash
 
-    export OPENLANE_TAG=v0.12
-    # Run openlane to harden user_proj_example
-    make user_proj_example
-    # Run openlane to harden user_project_wrapper
-    make user_project_wrapper
+   # Run openlane to harden user_proj_example
+   make user_proj_example
+   # Run openlane to harden user_project_wrapper
+   make user_project_wrapper
+
+
+Running Open-MPW Precheck Locally
+=================================
+
+You can install the precheck by running 
+
+.. code:: bash
+
+   # By default, this install the precheck in your home directory
+   # To change the installtion path, run "export PRECHECK_ROOT=<precheck installation path>" 
+   make precheck
+
+This will clone the precheck repo and pull the latest precheck docker image. 
+
+
+Then, you can run the precheck by running
+Specify CARAVEL_ROOT before running any of the following, 
+
+.. code:: bash
+
+   # export CARAVEL_ROOT=$(pwd)/caravel 
+   export CARAVEL_ROOT=<path-to-caravel>
+   make run-precheck
+
+This will run all the precheck checks on your project and will produce the logs under the ``checks`` directory.
+
+
+Other Miscellaneous Targets
+============================
+
+The makefile provides a number of useful that targets that can run LVS, DRC, and XOR checks on your hardened design outside of openlane's flow. 
+
+Run ```make help`` to display available targets. 
+
+Specify CARAVEL_ROOT before running any of the following, 
+
+.. code:: bash
+
+   # export CARAVEL_ROOT=$(pwd)/caravel 
+   export CARAVEL_ROOT=<path-to-caravel>
+
+Run lvs on spice, 
+
+.. code:: bash
+
+   make lvs-<macro_name>
+
+Run lvs on the gds, 
+
+.. code:: bash
+
+   make lvs-gds-<macro_name>
+
+Run lvs on the maglef, 
+
+.. code:: bash
+
+   make lvs-maglef-<macro_name>
+
+Run drc using magic,
+
+.. code:: bash
+
+   make drc-<macro_name>
+
+Run antenna check using magic, 
+
+.. code:: bash
+
+   make antenna-<macro_name>
+
+Run XOR check, 
+
+.. code:: bash
+
+   make xor-wrapper
+
 
 Checklist for Open-MPW Submission
 =================================

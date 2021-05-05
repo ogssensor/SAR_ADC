@@ -75,13 +75,13 @@ void main()
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
 
-	reg_la2_ena = 0xFFFFFFFF;    // [95:64]
+	reg_la2_oenb = reg_la2_iena = 0xFFFFFFFF;    // [95:64]
 
     // Flag start of the test
 	reg_mprj_datal = 0xAB600000;
 
     reg_mprj_slave = 0x00002710;
-    if (reg_mprj_slave == 0x274F) {
+    if (reg_mprj_slave == 0x2752) {
         reg_mprj_datal = 0xAB610000;
     } else {
         reg_mprj_datal = 0xAB600000;
