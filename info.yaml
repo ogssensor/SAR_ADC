@@ -1,13 +1,13 @@
 ---
 project:
-  description: "A template SoC for Google sponsored Open MPW shuttles for SKY130."
+  description: "VCO-based ADC for Google sponsored Open MPW shuttles for SKY130."
   foundry: "SkyWater"
-  git_url: "https://github.com/efabless/caravel_project_example.git"
-  organization: "Efabless"
-  organization_url: "http://efabless.com"
-  owner: "Tim Edwards"
+  git_url: "https://github.com/duyhieubui/caravel_vco_adc.git"
+  organization: "ITI, VNU"
+  organization_url: "http://iti.vnu.edu.vn"
+  owner: "Duy-Hieu Bui"
   process: "SKY130"
-  project_name: "Caravel"
+  project_name: "VCO-Based-ADC"
   project_id: "00000000"
   tags:
     - "Open MPW"
