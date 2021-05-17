@@ -36,9 +36,11 @@
  */
 `include "vco_adc.v"
 `include "fifo.v"
+
 `define REG_MPRJ_SLAVE       32'h30000000 // VCO enable
 `define REG_MPRJ_VCO_ADC     32'h30000004
-module user_proj_example #(
+
+module vco_adc_wrapper #(
     parameter BITS = 32
 )(
 `ifdef USE_POWER_PINS
@@ -51,7 +53,7 @@ module user_proj_example #(
     inout vssd1,	// User area 1 digital ground
     inout vssd2,	// User area 2 digital ground
 `endif
-
+    input [10:0] phase_in,
     // Wishbone Slave ports (WB MI A)
     input wb_clk_i,
     input wb_rst_i,
@@ -147,13 +149,13 @@ module user_proj_example #(
       ,.rd_data_o(fifo_out_w));
 
    vco_adc vco_adc_0
-     (.clk(wb_clk_i),
-      .rst(wb_rst_i),
-      .analog_in(),
-      .oversample_in(oversample_reg),
-      .enable_in(ena_reg),
-      .data_out(adc_out),
-      .data_valid_out(adc_dvalid)
+     (.clk(wb_clk_i)
+      ,.rst(wb_rst_i)
+      ,.phase_in(phase_in)
+      ,.oversample_in(oversample_reg)
+      ,.enable_in(ena_reg)
+      ,.data_out(adc_out)
+      ,.data_valid_out(adc_dvalid)
       );
 
 endmodule

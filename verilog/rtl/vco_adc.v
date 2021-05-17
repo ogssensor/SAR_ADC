@@ -7,7 +7,6 @@
 // Last Modified On: Sat May 15 00:37:39 2021
 // Update Count    : 0
 // Status          : done
-`include "vco.v"
 `include "phase_readout.v"
 `include "phase_sum.v"
 `include "sinc_sync.v"
@@ -16,9 +15,10 @@ module vco_adc
   (
    input 	 clk,
    input 	 rst,
-   input 	 analog_in,
+   // input 	 analog_in,
    input [9:0] 	 oversample_in,
    input 	 enable_in,
+   input [10:0]  phase_in,
    output [31:0] data_out,
    output 	 data_valid_out);
 
@@ -26,12 +26,13 @@ module vco_adc
    wire [10:0] 	 sum_in;
    wire [3:0] 	 sum_out;
 
-   vco #(.PHASE_WIDTH(11)) dut 
-     (.clk(clk),
-      .rst(rst),
-      // .enable_in(1'b1),
-      .analog_in(analog_in),
-      .data_o(phase_out));
+   // vco #(.PHASE_WIDTH(11)) dut 
+   //   (.clk(clk),
+   //    .rst(rst),
+   //    // .enable_in(1'b1),
+   //    .analog_in(analog_in),
+   //    .data_o(phase_out));
+   assign phase_out = phase_in;
 
    phase_readout
      #(.PHASE_WIDTH(11))

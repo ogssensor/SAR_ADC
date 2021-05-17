@@ -24,5 +24,6 @@
     `include "gl/user_proj_example.v"
 `else
     `include "user_project_wrapper.v"
-    `include "user_proj_example.v"
+    `include "vco_adc_wrapper.v"
+    `include "vco.v"
 `endif
