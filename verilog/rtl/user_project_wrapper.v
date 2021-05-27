@@ -126,12 +126,15 @@ module user_project_wrapper #(
 	   // IRQ
 	   .irq(user_irq)
 	   );
-   vco #(.PHASE_WIDTH(11))
-   vco_0 (.clk(wb_clk_i),
-	  .rst(wb_rst_i),
+   vco vco_0 (// .clk(wb_clk_i),
+	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
-	  .analog_in(),
-	  .data_o(phase));
+`ifdef USE_POWER_PINS
+	  .vccd1(vccd1),
+	  .vssd1(vssd1),
+`endif
+	  .input_analog(analog_io[0]),
+	  .p(phase));
 
 endmodule	// user_project_wrapper
 

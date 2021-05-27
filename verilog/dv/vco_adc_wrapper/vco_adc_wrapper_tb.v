@@ -34,7 +34,7 @@ module vco_adc_wrapper_tb;
    initial begin
       $dumpfile("vco_adc_wrapper.vcd");
       $dumpvars(0, vco_adc_wrapper_tb);
-      repeat (200) begin
+      repeat (100) begin
 	 repeat (1000) @(posedge clock);
 	 $display("+1000 cycles");
       end
@@ -48,7 +48,6 @@ module vco_adc_wrapper_tb;
    initial begin
       wait(checkbits == 16'hAB40);
       $display("Monitor: Test MPRJ (RTL) Started!");
-      repeat (20000) @(posedge clock);
       wait(checkbits == 16'hAB90);
       $display("Monitor: Test MPRJ (RTL) Passed!");
       $finish;

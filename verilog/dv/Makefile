@@ -19,7 +19,7 @@
 .SUFFIXES:
 .SILENT: clean all
 
-PATTERNS = io_ports la_test1 la_test2 wb_port mprj_stimulus vco_adc_wrapper
+PATTERNS = vco_adc_wrapper
 
 all:  ${PATTERNS}
 	for i in ${PATTERNS}; do \
@@ -35,5 +35,5 @@ clean:  ${PATTERNS}
 		( cd $$i && make clean ) ; \
 	done
 	rm -rf *.log
-	
+
 .PHONY: clean all

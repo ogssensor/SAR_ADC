@@ -42,13 +42,16 @@ set ::env(MACRO_PLACEMENT_CFG) $script_dir/macro.cfg
 ### Black-box verilog and views
 set ::env(VERILOG_FILES_BLACKBOX) "\
 	$script_dir/../../caravel/verilog/rtl/defines.v \
-	$script_dir/../../verilog/rtl/user_proj_example.v"
+	$script_dir/../../verilog/rtl/vco_adc_wrapper.v \
+        $script_dir/../../verilog/rtl/vco.v"
 
 set ::env(EXTRA_LEFS) "\
-	$script_dir/../../lef/user_proj_example.lef"
+	$script_dir/../../lef/vco_adc_wrapper.lef \
+        $script_dir/../../lef/vco.lef"
 
 set ::env(EXTRA_GDS_FILES) "\
-	$script_dir/../../gds/user_proj_example.gds"
+	$script_dir/../../gds/vco_adc_wrapper.gds \
+        $script_dir/../../gds/vco.gds"
 
 set ::env(GLB_RT_MAXLAYER) 5
 

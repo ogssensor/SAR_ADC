@@ -38,7 +38,10 @@
 `include "fifo.v"
 
 `define REG_MPRJ_SLAVE       32'h30000000 // VCO enable
-`define REG_MPRJ_VCO_ADC     32'h30000004
+`define REG_MPRJ_VCO_ADC     32'h30000004 // VCO result
+`define REG_MPRJ_STATUS      32'h30000008 // VCO status
+`define REG_MPRJ_NO_DATA     32'h3000000C // VCO #data
+`define REG_MPRJ_IRQ         32'h30000010 // VCO interrupt
 
 module vco_adc_wrapper #(
     parameter BITS = 32
@@ -84,6 +87,8 @@ module vco_adc_wrapper #(
    reg 	     ena_reg;  
    reg 	     wbs_ack_reg;
    
+   reg [1:0] 	 status_reg;
+   reg [31:0] 	 no_data_reg;
 
    wire [BITS-1:0] 	  adc_out;
    wire 		  adc_dvalid;
@@ -93,13 +98,41 @@ module vco_adc_wrapper #(
    wire 		  empty_out_w;
    wire 		  full_out_w;
    wire                   ren_w;
+   wire 		  rst;
 
+   assign rst = (~la_oenb[0]) ? la_data_in[0] : wb_rst_i;
+   
    assign valid_w = wbs_cyc_i & wbs_stb_i;
    assign wen_w   = wbs_we_i & (valid_w & wbs_sel_i[0]);
-   assign ren_w   = ((wbs_we_i == 1'b0) & valid_w & wbs_ack_reg);   
+   assign ren_w   = ((wbs_we_i == 1'b0) & valid_w & ~wbs_ack_reg);   
 
-   always @(posedge wb_clk_i, negedge wb_rst_i) begin
-      if (wb_rst_i == 1'b1) begin
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
+	 status_reg <= 2'b0;
+      end else begin
+	 if (ena_reg) begin
+	    if (full_out_w)
+	      status_reg <= 2'b11;   // FULL STATUS
+	    else if (empty_out_w)
+	      status_reg <= 2'b10;   // EMPTY STATUS
+	    else
+	      status_reg <= 2'b01;   // WORKING STATUS
+	 end else
+	   status_reg <= 2'b0;       // IDLE STATUS
+      end
+   end
+
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
+	 no_data_reg <= {32{1'b0}};
+      end else begin
+	 if (adc_dvalid)
+	   no_data_reg <= no_data_reg + 1;
+      end
+   end
+   
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
 	 wbs_ack_reg <= 1'b0;
       end else begin
 	 wbs_ack_reg <= ((valid_w & (wbs_ack_o == 1'b0)) & (wbs_ack_reg == 1'b0));
@@ -108,16 +141,16 @@ module vco_adc_wrapper #(
 
    assign wbs_ack_o = (valid_w & (wbs_ack_reg == 1'b0)) ? wbs_we_i : wbs_ack_reg;
    
-   always @(posedge wb_clk_i, negedge wb_rst_i) begin
-      if (wb_rst_i == 1'b1) begin
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
 	 oversample_reg <= 10'b0;
 	 ena_reg        <= 1'b0;
       end else begin
 	 if (wen_w) begin
 	    case (wbs_adr_i)
 	      `REG_MPRJ_SLAVE : begin
-		 ena_reg <= wbs_dat_i[0];
-		 oversample_reg <= wbs_dat_i[10:1];
+		 ena_reg <= wbs_dat_i[31];
+		 oversample_reg <= wbs_dat_i[9:0];
 	        end
 	      default begin
 		 ena_reg <= ena_reg;
@@ -128,10 +161,14 @@ module vco_adc_wrapper #(
       end
    end
 
-   assign wbs_dat_o = (wbs_adr_i == `REG_MPRJ_VCO_ADC) ? fifo_out_w : {BITS{1'b0}};
+   assign wbs_dat_o = (wbs_adr_i == `REG_MPRJ_VCO_ADC) ? fifo_out_w  :
+		      (wbs_adr_i == `REG_MPRJ_STATUS)  ? status_reg  :
+		      (wbs_adr_i == `REG_MPRJ_NO_DATA) ? no_data_reg :
+		      {BITS{1'b0}};
+   
    // IO
    assign io_out    = fifo_out_w;
-   assign io_oeb    = {(`MPRJ_IO_PADS-1){wb_rst_i}};
+   assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
    assign irq  = 3'b000;
 
 
@@ -140,7 +177,7 @@ module vco_adc_wrapper #(
        ,.DATA_WIDTH(BITS))
    sync_fifo
      (.clk(wb_clk_i)
-      ,.rst(wb_rst_i)
+      ,.rst(rst)
       ,.wr_en_i(adc_dvalid)
       ,.wr_data_i(adc_out)
       ,.full_o(full_out_w)
@@ -150,7 +187,7 @@ module vco_adc_wrapper #(
 
    vco_adc vco_adc_0
      (.clk(wb_clk_i)
-      ,.rst(wb_rst_i)
+      ,.rst(rst)
       ,.phase_in(phase_in)
       ,.oversample_in(oversample_reg)
       ,.enable_in(ena_reg)

@@ -17,9 +17,29 @@
 
 // This include is relative to $CARAVEL_PATH (see Makefile)
 #include "verilog/dv/caravel/defs.h"
+#include "verilog/dv/caravel/stub.c"
 
 // --------------------------------------------------------
 #define reg_mprj_vco_adc (*(volatile uint32_t*)0x30000004)
+#define reg_mprj_status  (*(volatile uint32_t*)0x30000008)
+#define reg_mprj_no_data (*(volatile uint32_t*)0x3000000C)
+
+#define VCO_IDLE    0x0
+#define VCO_WORKING 0x1
+#define VCO_EMPTY   0x2
+#define VCO_FULL    0x3
+
+static uint32_t mprj_set_config(uint32_t enable, uint32_t ovs) {
+  uint32_t cfg = (enable << 31);
+  cfg |= ovs & 0x3FF;
+  return cfg;
+}
+
+static uint32_t read_data(uint32_t* data, int len) {
+  for (int i = 0; i < len; ++i)
+    data[i] = reg_mprj_status;
+}
+static uint32_t vco_data[32];
 
 void main()
 {
@@ -32,19 +52,40 @@ void main()
     // designed to read the project count through the
     // logic analyzer probes.
     // I/O 6 is configured for the UART Tx line
-    uint32_t testval;
 
-    reg_spimaster_config = 0xa002;	// Enable, prescaler = 2
+    reg_spimaster_config = 0xb002;      // Apply stream mode
+    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
+    reg_spimaster_data = 0x08;          // Write 0x18 (start address)
+    reg_spimaster_data = 0x01;          // Write 0x01 to PLL enable, no DCO mode
+    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
+
+    reg_spimaster_config = 0xb002;      // Apply stream mode
+    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
+    reg_spimaster_data = 0x11;          // Write 0x11 (start address)
+    reg_spimaster_data = 0x06;          // Write 0x03 to PLL output divider
+    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
+
+    reg_spimaster_config = 0xb002;      // Apply stream mode
+    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
+    reg_spimaster_data = 0x09;          // Write 0x09 (start address)
+    reg_spimaster_data = 0x00;          // Write 0x00 to clock from PLL (no bypass)
+    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
+
+    reg_spimaster_config = 0xb002;      // Apply stream mode
+    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
+    reg_spimaster_data = 0x12;          // Write 0x12 (start address)
+    reg_spimaster_data = 0x03;          // Write 0x03 to feedback divider (was 0x04)
+    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
 
     reg_mprj_datal = 0x00000000;
     reg_mprj_datah = 0x00000000;
 
-    reg_mprj_io_37 = GPIO_MODE_MGMT_STD_OUTPUT;;
-    reg_mprj_io_36 = GPIO_MODE_MGMT_STD_OUTPUT;;
-    reg_mprj_io_35 = GPIO_MODE_MGMT_STD_BIDIRECTIONAL;
-    reg_mprj_io_34 = GPIO_MODE_MGMT_STD_BIDIRECTIONAL;
-    reg_mprj_io_33 = GPIO_MODE_MGMT_STD_BIDIRECTIONAL;
-    reg_mprj_io_32 = GPIO_MODE_MGMT_STD_BIDIRECTIONAL;
+    reg_mprj_io_37 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_36 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_35 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_34 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_33 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_32 = GPIO_MODE_MGMT_STD_OUTPUT;
 
     reg_mprj_io_31 = GPIO_MODE_MGMT_STD_OUTPUT;
     reg_mprj_io_30 = GPIO_MODE_MGMT_STD_OUTPUT;
@@ -98,7 +139,7 @@ void main()
 
     // Configure LA probes [31:0], [127:64] as inputs to the cpu
     // Configure LA probes [63:32] as outputs from the cpu
-    /* reg_la0_oenb = reg_la0_iena = 0xFFFFFFFF;    // [31:0] */
+    reg_la0_oenb = reg_la0_iena = 0xFFFFFFFF;    // [31:0]
     /* reg_la1_oenb = reg_la1_iena = 0x00000000;    // [63:32] */
     /* reg_la2_oenb = reg_la2_iena = 0xFFFFFFFF;    // [95:64] */
     /* reg_la3_oenb = reg_la3_iena = 0xFFFFFFFF;    // [127:96] */
@@ -106,29 +147,6 @@ void main()
     // Flag start of the test
     reg_mprj_datal = 0xAB400000;
 
-    reg_spimaster_config = 0xb002;      // Apply stream mode
-    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
-    reg_spimaster_data = 0x08;          // Write 0x18 (start address)
-    reg_spimaster_data = 0x01;          // Write 0x01 to PLL enable, no DCO mode
-    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
-
-    reg_spimaster_config = 0xb002;      // Apply stream mode
-    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
-    reg_spimaster_data = 0x11;          // Write 0x11 (start address)
-    reg_spimaster_data = 0x03;          // Write 0x03 to PLL output divider
-    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
-
-    reg_spimaster_config = 0xb002;      // Apply stream mode
-    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
-    reg_spimaster_data = 0x09;          // Write 0x09 (start address)
-    reg_spimaster_data = 0x00;          // Write 0x00 to clock from PLL (no bypass)
-    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
-
-    reg_spimaster_config = 0xb002;      // Apply stream mode
-    reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
-    reg_spimaster_data = 0x12;          // Write 0x12 (start address)
-    reg_spimaster_data = 0x03;          // Write 0x03 to feedback divider (was 0x04)
-    reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
     // Set Counter value to zero through LA probes [63:32]
     // reg_la1_data = 0x00000000;
 
@@ -141,27 +159,10 @@ void main()
     // Test ability to force data on channel 37
     // NOTE:  Only the low 6 bits of reg_mprj_datah are meaningful
 
-    reg_mprj_slave = 0x00000201; // enable VCO + OVS = 512
-
-    // Test ability to read back data generated by the user project
-    // on the "monitored" outputs.  Read from the lower 16 bits and
-    // copy the value to the upper 16 bits.
-    reg_mprj_datal = 0xAB410000;
-
-    testval = reg_mprj_vco_adc; // extract data
-    reg_mprj_datah = ((testval & 0xf) << 4) & 0xffff0000;
-
-    reg_mprj_datal = 0xAB420000;
-
-    testval = reg_mprj_vco_adc;
-    reg_mprj_datah = ((testval & 0xf) << 4) & 0xffff0000;
-
-    reg_mprj_datal = 0xAB430000;
-    testval = reg_mprj_vco_adc;
-
-    reg_mprj_datal = 0xAB440000;
-    testval = reg_mprj_vco_adc;
-
+  // Bit 31  : enable VCO
+  // Bit 9:0 : OVS = 512
+    reg_mprj_slave = mprj_set_config(1, 511);
+    read_data(vco_data, 32);
     // Flag end of the test
     reg_mprj_datal = 0xAB900000;
 }

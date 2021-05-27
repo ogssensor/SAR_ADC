@@ -3,18 +3,38 @@ module vco
   #(
     parameter PHASE_WIDTH = 11)
   (
-   input 		    clk,
-   input 		    rst,
-//   input 		    enable_in,
-   input 		    analog_in, 
-   output [PHASE_WIDTH-1:0] data_o
-   );
+`ifdef USE_POWER_PINS
+    inout vccd1,	// User area 1 1.8V supply
+    inout vssd1,	// User area 1 analog ground
+`endif
 
+   // input 		    clk,
+   // input 		    rst,
+//   input 		    enable_in,
+   input 		    input_analog, 
+   output [PHASE_WIDTH-1:0] p
+   );
+`ifdef FUNCTIONAL
    reg [14:0] 		     counter_reg;
-   reg [PHASE_WIDTH-1:0] 		     vco_val[0:9999];
+   reg [PHASE_WIDTH-1:0]     vco_val[0:9999];
+   reg 			     clk;
+   reg 			     rst;
+   
    initial begin
       $display("Load vco-phase");
       $readmemb("testcase_f10khz_oversample_512_fs25Mhz.txt", vco_val);
+   end
+   // set the frequency to 50MHz to match the system freq
+   always #20 clk <= (clk === 1'b0);
+   
+   initial begin
+      clk = 0;
+   end
+
+   initial begin
+      rst <= 1'b1;
+      #2000;
+      rst <= 1'b0;
    end
 
    always @(posedge clk) begin
@@ -28,6 +48,7 @@ module vco
       end
    end
 
-   assign data_o = vco_val[counter_reg];
+   assign p = vco_val[counter_reg];
+`endif
 endmodule // vco
 
