@@ -6,7 +6,7 @@
 
 This project implements a VCO-Based ADC on skywater 130nm for IoT.
 
-![VCO-based ADC Architecture](doc/images/vco-adc-arch.png)
+![VCO-based ADC Block Diagram](./docs/images/vco-adc-arch.png?raw=True "VCO-Based ADC Block Diagram")
 
 The ADC Specification:
 
@@ -26,7 +26,7 @@ The sin3 filter is used to provide the first-order noise shaping.
 Except for the VCO, the rest of the design has been implemented using
 the digital design flow.
 
-![System architecture](doc/images/system-arch.png)
+![System architecture](./docs/images/system-arch.png?raw=True "System Architecture")
 
 # Contributors
 
