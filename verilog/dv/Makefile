@@ -19,7 +19,7 @@
 .SUFFIXES:
 .SILENT: clean all
 
-PATTERNS = vco_adc_wrapper
+PATTERNS = vco_adc_wrapper vco_adc
 
 all:  ${PATTERNS}
 	for i in ${PATTERNS}; do \

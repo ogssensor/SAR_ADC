@@ -3,8 +3,6 @@ module phase_sum
     parameter PHASE_WIDTH = 11,
     parameter SUM_WIDTH = 4) // ceil(log2(BIT_WIDTH))
    (
-    input 		     clk,
-    input 		     rst,
     input [PHASE_WIDTH-1:0] phase_i,
     output [SUM_WIDTH-1:0]  sum_o 
     );

@@ -13,7 +13,6 @@ module phase_readout
     parameter PHASE_WIDTH = 11)
    (
     input 		     clk,
-    input 		     rst,
     input [PHASE_WIDTH-1:0]  data_i,
     output [PHASE_WIDTH-1:0] data_o
     );
@@ -23,7 +22,6 @@ module phase_readout
       for (i = 0; i < PHASE_WIDTH; i = i+1) begin
       phase_diff pd (
 		     .clk(clk),
-		     .rst(rst),
 		     .data_i(data_i[i]),
 		     .data_o(data_o[i])
 		     );

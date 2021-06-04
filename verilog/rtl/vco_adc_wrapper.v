@@ -37,11 +37,11 @@
 `include "vco_adc.v"
 `include "fifo.v"
 
-`define REG_MPRJ_SLAVE       32'h30000000 // VCO enable
-`define REG_MPRJ_VCO_ADC     32'h30000004 // VCO result
-`define REG_MPRJ_STATUS      32'h30000008 // VCO status
-`define REG_MPRJ_NO_DATA     32'h3000000C // VCO #data
-`define REG_MPRJ_IRQ         32'h30000010 // VCO interrupt
+`define REG_MPRJ_SLAVE       24'h300000 // VCO Based address
+`define REG_MPRJ_VCO_CONFIG  8'h00
+`define REG_MPRJ_FIFO_DATA   8'h04 // VCO read data from the fifo
+`define REG_MPRJ_STATUS      8'h08 // VCO status
+`define REG_MPRJ_NUM_DATA    8'h0C // VCO number of data writen into the fifo
 
 module vco_adc_wrapper #(
     parameter BITS = 32
@@ -88,7 +88,8 @@ module vco_adc_wrapper #(
    reg 	     wbs_ack_reg;
    
    reg [1:0] 	 status_reg;
-   reg [31:0] 	 no_data_reg;
+   reg [31:0] 	 num_data_reg;
+   reg [31:0] 	 data_o;
 
    wire [BITS-1:0] 	  adc_out;
    wire 		  adc_dvalid;
@@ -99,8 +100,10 @@ module vco_adc_wrapper #(
    wire 		  full_out_w;
    wire                   ren_w;
    wire 		  rst;
+   wire 		  slave_sel;
 
    assign rst = (~la_oenb[0]) ? la_data_in[0] : wb_rst_i;
+   assign slave_sel = (wbs_adr_i[31:8] == `REG_MPRJ_SLAVE);
    
    assign valid_w = wbs_cyc_i & wbs_stb_i;
    assign wen_w   = wbs_we_i & (valid_w & wbs_sel_i[0]);
@@ -124,10 +127,10 @@ module vco_adc_wrapper #(
 
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
-	 no_data_reg <= {32{1'b0}};
+	 num_data_reg <= {32{1'b0}};
       end else begin
 	 if (adc_dvalid)
-	   no_data_reg <= no_data_reg + 1;
+	   num_data_reg <= num_data_reg + 1;
       end
    end
    
@@ -146,9 +149,9 @@ module vco_adc_wrapper #(
 	 oversample_reg <= 10'b0;
 	 ena_reg        <= 1'b0;
       end else begin
-	 if (wen_w) begin
-	    case (wbs_adr_i)
-	      `REG_MPRJ_SLAVE : begin
+	 if (slave_sel && wen_w) begin
+	    case (wbs_adr_i[7:0])
+	      8'h00 : begin
 		 ena_reg <= wbs_dat_i[31];
 		 oversample_reg <= wbs_dat_i[9:0];
 	        end
@@ -161,16 +164,22 @@ module vco_adc_wrapper #(
       end
    end
 
-   assign wbs_dat_o = (wbs_adr_i == `REG_MPRJ_VCO_ADC) ? fifo_out_w  :
-		      (wbs_adr_i == `REG_MPRJ_STATUS)  ? status_reg  :
-		      (wbs_adr_i == `REG_MPRJ_NO_DATA) ? no_data_reg :
-		      {BITS{1'b0}};
+   always @* begin
+      case (wbs_adr_i[7:0]) 
+	`REG_MPRJ_VCO_CONFIG: data_o <= {ena_reg, 21'h0, oversample_reg};
+	`REG_MPRJ_FIFO_DATA: data_o <= fifo_out_w;
+	`REG_MPRJ_STATUS: data_o <= status_reg;
+	`REG_MPRJ_NUM_DATA: data_o <= num_data_reg;
+	default: data_o <= 32'h0;
+      endcase // case (wbs_adr_i[7:0])
+      
+   end
    
    // IO
    assign io_out    = fifo_out_w;
    assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
    assign irq  = 3'b000;
-
+   assign wbs_dat_o = data_o;
 
    fifo
      #(.DEPTH_WIDTH(4)
