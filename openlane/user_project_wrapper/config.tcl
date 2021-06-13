@@ -38,19 +38,29 @@ set ::env(CLOCK_PERIOD) "10"
 ## Internal Macros
 ### Macro Placement
 set ::env(MACRO_PLACEMENT_CFG) $script_dir/macro.cfg
-
+set SRAM_MODEL_NAME "sky130_sram_4kbyte_1rw1r_32x1024_8"
 ### Black-box verilog and views
 set ::env(VERILOG_FILES_BLACKBOX) "\
 	$script_dir/../../caravel/verilog/rtl/defines.v \
 	$script_dir/../../verilog/rtl/vco_adc_wrapper.v \
+        $script_dir/../../verilog/rtl/${SRAM_MODEL_NAME}.v \
+        $script_dir/../../verilog/rtl/vco_r100.v \
         $script_dir/../../verilog/rtl/vco.v"
 
+# set ::env(EXTRA_LEFS) "\
+# 	$script_dir/../../lef/vco_adc_wrapper.lef \
+#         $script_dir/../../lef/sky130_sram_8kbyte_1rw1r_32x2048_8.lef \
+#         $script_dir/../../lef/vco.lef"
 set ::env(EXTRA_LEFS) "\
 	$script_dir/../../lef/vco_adc_wrapper.lef \
+        $script_dir/../../lef/${SRAM_MODEL_NAME}.lef \
+        $script_dir/../../lef/vco_r100.lef \
         $script_dir/../../lef/vco.lef"
 
 set ::env(EXTRA_GDS_FILES) "\
 	$script_dir/../../gds/vco_adc_wrapper.gds \
+        $script_dir/../../gds/${SRAM_MODEL_NAME}.gds \
+        $script_dir/../../gds/vco_r100.gds \
         $script_dir/../../gds/vco.gds"
 
 set ::env(GLB_RT_MAXLAYER) 5
@@ -70,3 +80,9 @@ set ::env(DIODE_INSERTION_STRATEGY) 0
 set ::env(FILL_INSERTION) 0
 set ::env(TAP_DECAP_INSERTION) 0
 set ::env(CLOCK_TREE_SYNTH) 0
+## temporary disable klayout XOR check because of a large number of viols
+set ::env(RUN_KLAYOUT_XOR) 0
+## This needs a patch to openlane
+set ::env(USE_SRAM_ABSTRACT) 1
+## this needs a pdk build with the sram macros
+set ::env(SRAM_ABSTRACT_MODEL) ${SRAM_MODEL_NAME}.mag

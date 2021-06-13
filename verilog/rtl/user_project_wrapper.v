@@ -77,8 +77,16 @@ module user_project_wrapper #(
     // User maskable interrupt signals
     output [2:0] user_irq
 );
-   wire [10:0] 	 phase;
-
+   wire [10:0] 	 phase0, phase1, phase2;
+   wire [31:0] 	 m2w_data;
+   wire [31:0] 	 w2m_data;
+   wire [9:0] 	 raddr;
+   wire [9:0] 	 waddr;
+   wire [3:0] 	 wmask;
+   wire 	 renb;
+   wire 	 wenb;
+   wire [2:0] 	 vco_enb;
+   wire [31:0] 	 m2w_data2;
 /*--------------------------------------*/
 /* User project is instantiated  here   */
 /*--------------------------------------*/
@@ -122,19 +130,95 @@ module user_project_wrapper #(
 	   .io_out(io_out),
 	   .io_oeb(io_oeb),
 	   // phase from vco
-	   .phase_in(phase),
+	   .phase0_in(phase0),
+	   .phase1_in(phase1),
+	   .phase2_in(phase2),
 	   // IRQ
-	   .irq(user_irq)
+	   .irq(user_irq),
+           .mem_renb_o(renb),
+           .mem_raddr_o(raddr),
+           .mem_wenb_o(wenb),
+           .mem_waddr_o(waddr),
+           .mem_data_o(w2m_data),
+           .mem_data_i(m2w_data),
+           .mem_data2_i(m2w_data2),
+           .wmask_o(wmask),
+           .vco_enb_o(vco_enb)
 	   );
+
+//    sky130_sram_8kbyte_1rw1r_32x2048_8
+//      mem_0 (
+// `ifdef USE_POWER_PINS
+// 	    .vccd1(vccd1),
+// 	    .vssd1(vssd1),
+// `endif
+// // Port 0: RW
+// 	    .clk0(wb_clk_i),
+// 	    .csb0(wenb),
+// 	    .web0(wenb),
+// 	    .wmask0(wmask),
+// 	    .addr0(waddr),
+// 	    .din0(w2m_data),
+// 	    .dout0(m2w_data2),
+// // Port 1: R
+// 	    .clk1(wb_clk_i),
+// 	    .csb1(renb),
+// 	    .addr1(raddr),
+// 	    .dout1(m2w_data)
+//   );
+   sky130_sram_4kbyte_1rw1r_32x1024_8
+     mem_0 (
+`ifdef USE_POWER_PINS
+	    .vccd1(vccd1),
+	    .vssd1(vssd1),
+`endif
+// Port 0: RW
+	    .clk0(wb_clk_i),
+	    .csb0(wenb),
+	    .web0(wenb),
+	    .wmask0(wmask),
+	    .addr0(waddr),
+	    .din0(w2m_data),
+	    .dout0(m2w_data2),
+// Port 1: R
+	    .clk1(wb_clk_i),
+	    .csb1(renb),
+	    .addr1(raddr),
+	    .dout1(m2w_data)
+  );
    vco vco_0 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
-	  .vccd1(vccd1),
-	  .vssd1(vssd1),
+	      .vccd2(vccd2),
+	      .vssd2(vssd2),
 `endif
-	  .input_analog(analog_io[0]),
-	  .p(phase));
+	      .enb(vco_enb[0]),
+	      .input_analog(analog_io[1]),
+	      .p(phase0));
+   assign analog_io[2] = phase0[9];
+   vco vco_1 (// .clk(wb_clk_i),
+	  // .rst(wb_rst_i),
+	  // .enable_in(1'b1),
+`ifdef USE_POWER_PINS
+	      .vccd2(vccd2),
+	      .vssd2(vssd2),
+`endif
+	      .enb(vco_enb[1]),
+	      .input_analog(analog_io[3]),
+	      .p(phase1));
+   assign analog_io[4] = phase1[9];
+   vco vco_2 (// .clk(wb_clk_i),
+	  // .rst(wb_rst_i),
+	  // .enable_in(1'b1),
+`ifdef USE_POWER_PINS
+	      .vccd2(vccd2),
+	      .vssd2(vssd2),
+`endif
+	      .enb(vco_enb[2]),
+	      .input_analog(analog_io[5]),
+	      .p(phase2));
+   assign analog_io[6] = phase2[9];
 
 endmodule	// user_project_wrapper
 

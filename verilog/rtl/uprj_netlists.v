@@ -25,6 +25,7 @@
     `include "vco.v"
 `else
     `include "user_project_wrapper.v"
+    `include "sky130_sram_4kbyte_1rw1r_32x1024_8.v"
     `include "vco_adc_wrapper.v"
     `include "vco.v"
 `endif

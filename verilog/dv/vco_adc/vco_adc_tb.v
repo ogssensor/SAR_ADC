@@ -8,6 +8,7 @@ module vco_adc_tb;
    reg clk;
    reg rst;
    reg enable;
+   integer data_counter, f;
 
    wire [10:0] phase_out;
    wire [10:0] sum_in;
@@ -20,13 +21,16 @@ module vco_adc_tb;
    
    initial begin
       clk = 0;
+      f = $fopen("adc_out.txt");
    end
    initial begin
       $dumpfile("vco_adc_tb.vcd");
       $dumpvars(0, vco_adc_tb);
-      $display("Monitor: Test MPRJ (RTL) Started!");
-      repeat (40000) @(posedge clk);
-      $display("Monitor: Test MPRJ (RTL) Passed!");
+      @(rst == 1'b0)
+      $display("Monitor: Test VCO_ADC (RTL) Started!");
+      repeat (4000) @(posedge clk);
+      @(data_counter == 32'h800);
+      $display("Monitor: Test VCO_ADC (RTL) Passed!");
       $finish;
    end
 
@@ -35,54 +39,45 @@ module vco_adc_tb;
       #2000;
       rst <= 1'b0;
    end
-
+   // // test enable signal
+   // initial begin
+   //    enable = 1'b0;
+   //    @(rst == 1'b0);
+   //    repeat (40) @(posedge clk);
+   //    enable = 1'b1;
+   //    repeat (20*256) @(posedge clk);
+   //    enable = 1'b0;
+   //    repeat (2000) @(posedge clk);
+   //    enable = 1'b1;
+   // end
    initial begin
       enable = 1'b0;
       @(rst == 1'b0);
       repeat (40) @(posedge clk);
       enable = 1'b1;
-      repeat (20*256) @(posedge clk);
-      enable = 1'b0;
-      repeat (2000) @(posedge clk);
-      enable = 1'b1;
+      @(posedge clk);
+   end
+   always @(valid_out) begin
+
    end
 
+   always @(posedge clk) begin
+      if (rst == 1'b1)
+   	data_counter <= 0;
+      else if (valid_out) begin
+   	 data_counter <= data_counter + 1;
+	 $display("Data: %08X", sinc_out);
+	 $fwrite(f, "%d\n", sinc_out);
+      end
+   end
    vco #(.PHASE_WIDTH(11)) vco_0
-     (.p(phase_out));
+     (.enb(1'b0),
+      .p(phase_out));
 
-   // phase_readout
-   //   #(.PHASE_WIDTH(11))
-   // pr (.clk(clk),
-   //     .rstn(rstn),
-   //     .data_i(phase_out),
-   //     .data_o(sum_in));
-
-   // phase_sum
-   //   #(.PHASE_WIDTH(11),
-   //     .SUM_WIDTH(4))
-   // ps (.clk(clk),
-   //     .rstn(rstn),
-   //     .phase_i(sum_in),
-   //     .sum_o(sum_out));
-
-   // sinc_ref #(.DATA_WIDTH(32))
-   // sc (.clk(clk),
-   //     .rstn(rstn),
-   //     .data_in(sum_out),
-   //     .data_out(sinc_out));
-
-   // sinc_sync #(.DATA_WIDTH(32))
-   // scs (.clk(clk),
-   // 	.rstn(rstn),
-   // 	.data_in(sum_out),
-   // 	.oversample_in(10'hff),
-   // 	.enable_in(enable),
-   // 	.data_valid_out(valid_out),
-   // 	.data_out(sinc_out2));
    vco_adc vco_adc_0
      (.clk(clk),
       .rst(rst),
-      .oversample_in(10'hff),
+      .oversample_in(10'h1ff),
       .enable_in(enable),
       .phase_in(phase_out),
       .data_out(sinc_out),

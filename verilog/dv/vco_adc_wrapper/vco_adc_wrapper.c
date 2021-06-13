@@ -30,14 +30,18 @@
 #define VCO_FULL    0x3
 
 static uint32_t mprj_set_config(uint32_t enable, uint32_t ovs) {
+  // enable sinc3
   uint32_t cfg = (enable << 31);
+  cfg |= 1 << 26;
   cfg |= ovs & 0x3FF;
+  // enable vco0
+
   return cfg;
 }
 
 static uint32_t read_data(uint32_t* data, int len) {
   for (int i = 0; i < len; ++i)
-    data[i] = reg_mprj_status;
+    data[i] = reg_mprj_vco_adc;
 }
 static uint32_t vco_data[32];
 
@@ -54,6 +58,8 @@ void main()
     // I/O 6 is configured for the UART Tx line
 
     reg_spimaster_config = 0xb002;      // Apply stream mode
+
+#ifdef USE_PLL
     reg_spimaster_data = 0x80;          // Write 0x80 (write mode)
     reg_spimaster_data = 0x08;          // Write 0x18 (start address)
     reg_spimaster_data = 0x01;          // Write 0x01 to PLL enable, no DCO mode
@@ -76,6 +82,7 @@ void main()
     reg_spimaster_data = 0x12;          // Write 0x12 (start address)
     reg_spimaster_data = 0x03;          // Write 0x03 to feedback divider (was 0x04)
     reg_spimaster_config = 0xa102;      // Release CSB (ends stream mode)
+#endif
 
     reg_mprj_datal = 0x00000000;
     reg_mprj_datah = 0x00000000;
@@ -160,8 +167,8 @@ void main()
     // NOTE:  Only the low 6 bits of reg_mprj_datah are meaningful
 
   // Bit 31  : enable VCO
-  // Bit 9:0 : OVS = 512
-    reg_mprj_slave = mprj_set_config(1, 511);
+  // Bit 9:0 : OVS = 256
+    reg_mprj_slave = mprj_set_config(1, 255);
     read_data(vco_data, 32);
     // Flag end of the test
     reg_mprj_datal = 0xAB900000;

@@ -19,6 +19,10 @@ module simple_dpram_sclk
     parameter ENABLE_BYPASS = 1
     )
    (
+`ifdef USE_POWER_PINS
+    inout vccd1,	// User area 1 1.8V supply
+    inout vssd1,	// User area 1 digital ground
+`endif
     input 		    clk,
     input [ADDR_WIDTH-1:0]  raddr,
     input 		    re,
@@ -27,7 +31,7 @@ module simple_dpram_sclk
     input [DATA_WIDTH-1:0]  din,
     output [DATA_WIDTH-1:0] dout
     );
-
+`ifndef SKY130A_SRAM
    reg [DATA_WIDTH-1:0]     mem[(1<<ADDR_WIDTH)-1:0];
    reg [DATA_WIDTH-1:0]     rdata;
 
@@ -58,5 +62,28 @@ endgenerate
       if (re)
 	rdata <= mem[raddr];
    end
+`else // !`ifndef SKY130A_SRAM
+   sky130_sram_8kbyte_1rw1r_32x2048_8
+     mem_0 (
+`ifdef USE_POWER_PINS
+	    .vccd1(vccd1),
+	    .vssd1(vccd1),
+`endif
+// Port 0: RW
+	    .clk0(clk),
+	    .csb0(~we),
+	    .web0(~we),
+	    .wmask0(4'b1111),
+	    .addr0(waddr),
+	    .din0(din),
+	    .dout0(),
+// Port 1: R
+	    .clk1(clk),
+	    .csb1(~re),
+	    .addr1(raddr),
+	    .dout1(dout)
+  );
 
+`endif // !`ifndef SKY130A_SRAM
+   
 endmodule

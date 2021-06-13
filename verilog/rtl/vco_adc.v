@@ -13,6 +13,10 @@
 
 module vco_adc
   (
+`ifdef USE_POWER_PINS
+    inout vdda1,	// User area 1 3.3V supply
+    inout vssd1,	// User area 1 digital ground
+`endif
    input 	 clk,
    input 	 rst,
    // input 	 analog_in,
@@ -24,10 +28,11 @@ module vco_adc
 
    wire [10:0] 	 sum_in;
    wire [3:0] 	 sum_out;
-   wire         data_valid;
-   reg [2:0]    startup_cnt_reg;
-   reg                  output_en_reg;
-
+   wire 	 data_valid;
+   reg [2:0] 	 startup_cnt_reg;
+   reg 		 output_en_reg;
+   reg [9:0] 	 oversample_reg;
+   reg 		 enable_reg;
 
    // vco #(.PHASE_WIDTH(11)) dut 
    //   (.clk(clk),
@@ -37,17 +42,28 @@ module vco_adc
    //    .data_o(phase_out));
    always @(posedge clk) begin
       if (rst == 1'b1) begin
+	 enable_reg <= 0;
+	 oversample_reg <= 10'hff;
+      end
+      else begin
+	 enable_reg <= enable_in;
+	 oversample_reg <= oversample_in;
+      end
+   end
+
+   always @(posedge clk) begin
+      if (rst == 1'b1) begin
 	 startup_cnt_reg = 3'h0;
 	 output_en_reg = 1'b0;
       end
       else begin
-	 if (enable_in == 1'b1
+	 if (enable_reg == 1'b1
 	     && startup_cnt_reg != 3'h4) begin
 	    if (data_valid == 1'b1)
 	      startup_cnt_reg = startup_cnt_reg + 3'h1;
 	    output_en_reg = 1'b0;
 	 end
-	 else if (enable_in == 1'b1
+	 else if (enable_reg == 1'b1
 		  && startup_cnt_reg == 3'h4) begin
 	    output_en_reg = 1'b1;
 	 end
@@ -74,8 +90,8 @@ module vco_adc
    scs (.clk(clk),
 	.rst(rst),
 	.data_in(sum_out),
-	.enable_in(enable_in),
-	.oversample_in(oversample_in),
+	.enable_in(enable_reg),
+	.oversample_in(oversample_reg),
 	.data_valid_out(data_valid),
 	.data_out(data_out));
    assign data_valid_out = data_valid & output_en_reg;

@@ -48,15 +48,16 @@ module fifo
 				    read_pointer[AW]);
    wire 	       full_or_empty = (write_pointer[AW-1:0] ==
 					read_pointer[AW-1:0]);
-   
-   assign full_o  = full_or_empty & !empty_int;
-   assign empty_o = full_or_empty & empty_int;
+   wire full = full_or_empty & !empty_int;
+   wire empty = full_or_empty & empty_int;
+   assign full_o  = full;
+   assign empty_o = empty;
    
    always @(posedge clk) begin
-      if (wr_en_i)
+      if (!full && wr_en_i)
 	write_pointer <= write_pointer + 1'd1;
 
-      if (rd_en_i)
+      if (!empty && rd_en_i)
 	read_pointer <= read_pointer + 1'd1;
 
       if (rst) begin

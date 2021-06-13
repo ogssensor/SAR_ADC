@@ -34,8 +34,9 @@
  *
  *-------------------------------------------------------------
  */
+`define SKY130A_SRAM
 `include "vco_adc.v"
-`include "fifo.v"
+// `include "fifo.v"
 
 `define REG_MPRJ_SLAVE       24'h300000 // VCO Based address
 `define REG_MPRJ_VCO_CONFIG  8'h00
@@ -56,7 +57,9 @@ module vco_adc_wrapper #(
     inout vssd1,	// User area 1 digital ground
     inout vssd2,	// User area 2 digital ground
 `endif
-    input [10:0] phase_in,
+    input [10:0] phase0_in,
+    input [10:0] phase1_in,
+    input [10:0] phase2_in,
     // Wishbone Slave ports (WB MI A)
     input wb_clk_i,
     input wb_rst_i,
@@ -80,27 +83,48 @@ module vco_adc_wrapper #(
     output [`MPRJ_IO_PADS-1:0] io_oeb,
 
     // IRQ
-    output [2:0] irq
+    output [2:0] irq,
+  // memory interface
+  output mem_renb_o,
+  output [9:0] mem_raddr_o,
+  output mem_wenb_o,
+  output [9:0] mem_waddr_o,
+  output [31:0] mem_data_o,
+  input [31:0] mem_data_i,
+  input [31:0] mem_data2_i,
+  output [3:0] wmask_o,
+  output [2:0] vco_enb_o
 );
 
    reg [9:0] oversample_reg;
-   reg 	     ena_reg;  
+   reg 	     ena_reg;
    reg 	     wbs_ack_reg;
-   
+
+   reg [9:0] wptr_reg;
+   reg [9:0] rptr_reg;
+
    reg [1:0] 	 status_reg;
    reg [31:0] 	 num_data_reg;
    reg [31:0] 	 data_o;
+   reg [31:0] 	 mem_rdata_reg;
+   reg 		 full_reg;
+   reg 		 empty_reg;
+   reg 		 clear_wptr_reg;
+   reg 		 clear_rptr_reg;
+   reg 		 ren_1d_reg;
+   reg [2:0] 	 vco_en_reg;
 
    wire [BITS-1:0] 	  adc_out;
    wire 		  adc_dvalid;
    wire 		  valid_w;
    wire 		  wen_w;
    wire [BITS-1:0] 	  fifo_out_w;
-   wire 		  empty_out_w;
-   wire 		  full_out_w;
+   // wire 		  empty_out_w;
+   // wire 		  full_out_w;
    wire                   ren_w;
    wire 		  rst;
    wire 		  slave_sel;
+   reg [10:0] 		  phase;
 
    assign rst = (~la_oenb[0]) ? la_data_in[0] : wb_rst_i;
    assign slave_sel = (wbs_adr_i[31:8] == `REG_MPRJ_SLAVE);
@@ -113,16 +137,8 @@ module vco_adc_wrapper #(
       if (rst == 1'b1) begin
 	 status_reg <= 2'b0;
       end else begin
-	 if (ena_reg) begin
-	    if (full_out_w)
-	      status_reg <= 2'b11;   // FULL STATUS
-	    else if (empty_out_w)
-	      status_reg <= 2'b10;   // EMPTY STATUS
-	    else
-	      status_reg <= 2'b01;   // WORKING STATUS
-	 end else
-	   status_reg <= 2'b0;       // IDLE STATUS
-      end
+	 status_reg <= {full_reg, empty_reg};
+     end
    end
 
    always @(posedge wb_clk_i) begin
@@ -138,7 +154,8 @@ module vco_adc_wrapper #(
       if (rst == 1'b1) begin
 	 wbs_ack_reg <= 1'b0;
       end else begin
-	 wbs_ack_reg <= ((valid_w & (wbs_ack_o == 1'b0)) & (wbs_ack_reg == 1'b0));
+	 wbs_ack_reg <= ((valid_w & (wbs_ack_o == 1'b0))
+			 & (wbs_ack_reg == 1'b0));
       end
    end
 
@@ -148,25 +165,25 @@ module vco_adc_wrapper #(
       if (rst == 1'b1) begin
 	 oversample_reg <= 10'b0;
 	 ena_reg        <= 1'b0;
+	 clear_wptr_reg <= 1'b0;
+	 clear_rptr_reg <= 1'b0;
+	 vco_en_reg <= 3'h0;
       end else begin
-	 if (slave_sel && wen_w) begin
-	    case (wbs_adr_i[7:0])
-	      8'h00 : begin
-		 ena_reg <= wbs_dat_i[31];
-		 oversample_reg <= wbs_dat_i[9:0];
-	        end
-	      default begin
-		 ena_reg <= ena_reg;
-		 oversample_reg <= oversample_reg;
-	      end
-	    endcase
+	 if (slave_sel && wen_w && wbs_adr_i[7:0] == 8'h00) begin
+	    ena_reg <= wbs_dat_i[31];
+	    clear_wptr_reg <= wbs_dat_i[30];
+	    clear_rptr_reg <= wbs_dat_i[29];
+	    vco_en_reg <= wbs_dat_i[28:26];
+	    oversample_reg <= wbs_dat_i[9:0];
 	 end
       end
    end
 
    always @* begin
       case (wbs_adr_i[7:0]) 
-	`REG_MPRJ_VCO_CONFIG: data_o <= {ena_reg, 21'h0, oversample_reg};
+	`REG_MPRJ_VCO_CONFIG: data_o <= {ena_reg, clear_wptr_reg,
+					 clear_rptr_reg, vco_en_reg,
+					 16'h0, oversample_reg};
 	`REG_MPRJ_FIFO_DATA: data_o <= fifo_out_w;
 	`REG_MPRJ_STATUS: data_o <= status_reg;
 	`REG_MPRJ_NUM_DATA: data_o <= num_data_reg;
@@ -174,30 +191,102 @@ module vco_adc_wrapper #(
       endcase // case (wbs_adr_i[7:0])
       
    end
-   
+   always @* begin
+      case (vco_en_reg)
+	3'b001: phase <= phase0_in;
+	3'b010: phase <= phase1_in;
+	3'b100: phase <= phase2_in;
+	default: phase <= phase0_in;
+      endcase // case (vco_en_reg)
+   end
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
+	 wptr_reg <= 11'h0;
+	 rptr_reg <= 11'h0;
+	 full_reg <= 1'b0;
+	 empty_reg <= 1'b1;
+      end
+      else begin
+	 if (!full_reg && adc_dvalid) begin
+	    wptr_reg <= rptr_reg + 11'h1;
+	 end else if (clear_wptr_reg) begin
+	    wptr_reg <= 10'h0;
+	 end
+
+	 if (wptr_reg == 10'h3FF) full_reg <= 1'b1;
+	 else full_reg <= 1'b0;
+	 if (wptr_reg == 10'h0) empty_reg <= 1'b1;
+	 else empty_reg <= 1'b0;
+
+	 if (!empty_reg && ren_w && wbs_adr_i[7:0] == 8'h4) begin
+	    rptr_reg <= rptr_reg + 10'h1;
+	 end else if (clear_rptr_reg) begin
+	    rptr_reg <= 11'h0;
+	 end
+      end
+   end
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1)
+	ren_1d_reg <= 1'b0;
+      else
+	ren_1d_reg <= ren_w;
+      if (empty_reg && adc_dvalid)
+	mem_rdata_reg <= adc_out;
+      else if (ren_1d_reg == 1'b1)
+	mem_rdata_reg <= mem_data_i;
+   end
+   assign mem_waddr_o = wptr_reg;
+   assign mem_raddr_o = rptr_reg;
+   assign mem_renb_o = ~ren_w;
+   assign mem_wenb_o = ~adc_dvalid;
+   assign mem_data_o = adc_out;
+   assign fifo_out_w = mem_rdata_reg;
+
    // IO
    assign io_out    = fifo_out_w;
    assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
    assign irq  = 3'b000;
    assign wbs_dat_o = data_o;
+   assign vco_enb_o = ~vco_en_reg;
 
-   fifo
-     #(.DEPTH_WIDTH(4)
-       ,.DATA_WIDTH(BITS))
-   sync_fifo
-     (.clk(wb_clk_i)
-      ,.rst(rst)
-      ,.wr_en_i(adc_dvalid)
-      ,.wr_data_i(adc_out)
-      ,.full_o(full_out_w)
-      ,.rd_en_i(ren_w)
-      ,.empty_o(empty_out_w)
-      ,.rd_data_o(fifo_out_w));
+   // fifo
+   //   #(.DEPTH_WIDTH(11)
+   //     ,.DATA_WIDTH(BITS))
+   // sync_fifo
+   //   (.clk(wb_clk_i)
+   //    ,.rst(rst)
+   //    ,.wr_en_i(adc_dvalid)
+   //    ,.wr_data_i(adc_out)
+   //    ,.full_o(full_out_w)
+   //    ,.rd_en_i(ren_w)
+   //    ,.empty_o(empty_out_w)
+   //    ,.rd_data_o(fifo_out_w));
+   
+//    sky130_sram_8kbyte_1rw1r_32x2048_8
+//      mem_0 (
+// `ifdef USE_POWER_PINS
+// 	    .vccd1(vccd1),
+// 	    .vssd1(vccd1),
+// `endif
+// // Port 0: RW
+// 	    .clk0(wb_clk_i),
+// 	    .csb0(1'b0),
+// 	    .web0(~adc_dvalid),
+// 	    .wmask0(4'b1111),
+// 	    .addr0(write_cnt_reg),
+// 	    .din0(adc_out),
+// 	    .dout0(),
+// // Port 1: R
+// 	    .clk1(wb_clk_i),
+// 	    .csb1(1'b0),
+// 	    .addr1(read_cnt_reg),
+// 	    .dout1()
+//   );
 
    vco_adc vco_adc_0
      (.clk(wb_clk_i)
       ,.rst(rst)
-      ,.phase_in(phase_in)
+      ,.phase_in(phase)
       ,.oversample_in(oversample_reg)
       ,.enable_in(ena_reg)
       ,.data_out(adc_out)

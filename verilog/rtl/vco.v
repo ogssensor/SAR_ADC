@@ -4,13 +4,13 @@ module vco
     parameter PHASE_WIDTH = 11)
   (
 `ifdef USE_POWER_PINS
-    inout vccd1,	// User area 1 1.8V supply
-    inout vssd1,	// User area 1 analog ground
+    inout vccd2,	// User area 1 1.8V supply
+    inout vssd2,	// User area 1 analog ground
 `endif
 
    // input 		    clk,
    // input 		    rst,
-//   input 		    enable_in,
+   input 		    enb,
    input 		    input_analog, 
    output [PHASE_WIDTH-1:0] p
    );
@@ -41,14 +41,16 @@ module vco
       if (rst == 1'b1) begin
 	 counter_reg <= 15'h0;
       end else begin
-	 if (counter_reg == 9999)
-	   counter_reg <= 15'h0;
-	 else
-	   counter_reg <= counter_reg + 1;
+	 if (enb == 1'b0) begin
+	    if (counter_reg == 9999)
+	      counter_reg <= 15'h0;
+	    else
+	      counter_reg <= counter_reg + 1;
+	 end
       end
    end
 
-   assign p = vco_val[counter_reg];
+   assign p = (enb == 1'b0) ? vco_val[counter_reg] : 0;
 `endif
 endmodule // vco
 
