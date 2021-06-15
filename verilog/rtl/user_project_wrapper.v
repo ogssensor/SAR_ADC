@@ -208,7 +208,7 @@ module user_project_wrapper #(
 	      .input_analog(analog_io[3]),
 	      .p(phase1));
    assign analog_io[4] = phase1[9];
-   vco vco_2 (// .clk(wb_clk_i),
+   vco vco_2 (// .clk(wb_clk_i), 
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS

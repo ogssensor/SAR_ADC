@@ -28,4 +28,6 @@
     `include "sky130_sram_4kbyte_1rw1r_32x1024_8.v"
     `include "vco_adc_wrapper.v"
     `include "vco.v"
+    `include "vco_r100.v"
+    `include "vco_w6_r100.v"
 `endif

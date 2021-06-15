@@ -34,9 +34,9 @@ module vco_adc_wrapper_tb;
    initial begin
       $dumpfile("vco_adc_wrapper.vcd");
       $dumpvars(0, vco_adc_wrapper_tb);
-      repeat (100) begin
-	 repeat (1000) @(posedge clock);
-	 $display("+1000 cycles");
+      repeat (500) begin
+	 repeat (10000) @(posedge clock);
+	 $display("+10000 cycles");
       end
       $display("%c[1;31m",27);
       $display ("Monitor: Timeout, Test MPRJ (RTL) Failed");

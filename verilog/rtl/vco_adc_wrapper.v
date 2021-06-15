@@ -96,6 +96,8 @@ module vco_adc_wrapper #(
   output [2:0] vco_enb_o
 );
 
+   localparam MAX_SIZE=1024;
+   
    reg [9:0] oversample_reg;
    reg 	     ena_reg;
    reg 	     wbs_ack_reg;
@@ -108,7 +110,9 @@ module vco_adc_wrapper #(
    reg [31:0] 	 data_o;
    reg [31:0] 	 mem_rdata_reg;
    reg 		 full_reg;
+   reg 		 full_1d_reg;
    reg 		 empty_reg;
+   reg 		 empty_1d_reg;
    reg 		 clear_wptr_reg;
    reg 		 clear_rptr_reg;
    reg 		 ren_1d_reg;
@@ -122,16 +126,24 @@ module vco_adc_wrapper #(
    // wire 		  empty_out_w;
    // wire 		  full_out_w;
    wire                   ren_w;
+   reg 			  ren_reg;
    wire 		  rst;
    wire 		  slave_sel;
+   wire 		  mem_write;
+   wire 		  mem_read;
    reg [10:0] 		  phase;
-
+   // synthesis translate_off
+   integer 		  rdat_file;
+   integer 		  wdat_file;
+   // synthesis translate_on
    assign rst = (~la_oenb[0]) ? la_data_in[0] : wb_rst_i;
    assign slave_sel = (wbs_adr_i[31:8] == `REG_MPRJ_SLAVE);
    
    assign valid_w = wbs_cyc_i & wbs_stb_i;
    assign wen_w   = wbs_we_i & (valid_w & wbs_sel_i[0]);
    assign ren_w   = ((wbs_we_i == 1'b0) & valid_w & ~wbs_ack_reg);   
+   assign mem_write = adc_dvalid & (!full_1d_reg);
+   assign mem_read = ren_w && (wbs_adr_i[7:0] == 8'h4);
 
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
@@ -185,7 +197,7 @@ module vco_adc_wrapper #(
 					 clear_rptr_reg, vco_en_reg,
 					 16'h0, oversample_reg};
 	`REG_MPRJ_FIFO_DATA: data_o <= fifo_out_w;
-	`REG_MPRJ_STATUS: data_o <= status_reg;
+	`REG_MPRJ_STATUS: data_o <= {30'h0, status_reg};
 	`REG_MPRJ_NUM_DATA: data_o <= num_data_reg;
 	default: data_o <= 32'h0;
       endcase // case (wbs_adr_i[7:0])
@@ -204,41 +216,53 @@ module vco_adc_wrapper #(
 	 wptr_reg <= 11'h0;
 	 rptr_reg <= 11'h0;
 	 full_reg <= 1'b0;
+	 full_1d_reg <= 1'b0;
 	 empty_reg <= 1'b1;
+	 empty_1d_reg <= 1'b1;
       end
       else begin
 	 if (!full_reg && adc_dvalid) begin
-	    wptr_reg <= rptr_reg + 11'h1;
+	    wptr_reg <= wptr_reg + 10'h1;
 	 end else if (clear_wptr_reg) begin
 	    wptr_reg <= 10'h0;
 	 end
 
-	 if (wptr_reg == 10'h3FF) full_reg <= 1'b1;
+	 if ((wptr_reg == MAX_SIZE-1)) full_reg <= 1'b1;
 	 else full_reg <= 1'b0;
-	 if (wptr_reg == 10'h0) empty_reg <= 1'b1;
+	 if (rptr_reg == wptr_reg || clear_rptr_reg) empty_reg <= 1'b1;
 	 else empty_reg <= 1'b0;
 
-	 if (!empty_reg && ren_w && wbs_adr_i[7:0] == 8'h4) begin
+	 if (adc_dvalid) full_1d_reg <= full_reg;
+	 else if (clear_wptr_reg) full_1d_reg <= 1'b0;
+
+	 if (ren_w) empty_1d_reg <= empty_reg;
+
+	 if (!empty_reg && mem_read) begin
 	    rptr_reg <= rptr_reg + 10'h1;
 	 end else if (clear_rptr_reg) begin
-	    rptr_reg <= 11'h0;
+	    rptr_reg <= 10'h0;
 	 end
       end
    end
    always @(posedge wb_clk_i) begin
-      if (rst == 1'b1)
-	ren_1d_reg <= 1'b0;
-      else
-	ren_1d_reg <= ren_w;
-      if (empty_reg && adc_dvalid)
+      if (rst == 1'b1) begin
+	 ren_1d_reg <= 1'b0;
+	 ren_reg <= 1'b0;
+      end
+      else begin
+	 ren_reg <= mem_read;
+	 ren_1d_reg <= ren_reg;
+      end
+
+      if (empty_1d_reg && adc_dvalid)
 	mem_rdata_reg <= adc_out;
       else if (ren_1d_reg == 1'b1)
 	mem_rdata_reg <= mem_data_i;
    end
    assign mem_waddr_o = wptr_reg;
    assign mem_raddr_o = rptr_reg;
-   assign mem_renb_o = ~ren_w;
-   assign mem_wenb_o = ~adc_dvalid;
+   assign mem_renb_o = ~ren_reg;
+   assign mem_wenb_o = ~mem_write;
    assign mem_data_o = adc_out;
    assign fifo_out_w = mem_rdata_reg;
 
@@ -248,6 +272,7 @@ module vco_adc_wrapper #(
    assign irq  = 3'b000;
    assign wbs_dat_o = data_o;
    assign vco_enb_o = ~vco_en_reg;
+   assign wmask_o = 4'hF;
 
    // fifo
    //   #(.DEPTH_WIDTH(11)
@@ -293,5 +318,32 @@ module vco_adc_wrapper #(
       ,.data_valid_out(adc_dvalid)
       );
 
+`ifdef FUNCTIONAL
+   // this is for debug only
+   initial begin
+      rdat_file = $fopen("wb_read_data.txt");
+      wdat_file = $fopen("wb_write_data.txt");
+   end
+
+   always @(posedge full_reg) begin
+      $display("Mem is full: wptr: %04X rptr: %04X", wptr_reg, rptr_reg);
+   end
+
+   always @(posedge empty_reg) begin
+      $display("Mem is empty: wptr: %04X rptr: %04X", wptr_reg, rptr_reg);
+   end
+
+   always @(posedge wb_clk_i) begin
+      if (mem_write) begin
+	 $display("Mem write: addr: %04X %08X", wptr_reg, adc_out);
+	 $fwrite(rdat_file, "%04X %08X\n", wptr_reg, adc_out);
+      end
+      if (wbs_ack_o && wbs_adr_i == 32'h30000004) begin
+	 $display("Interface read: addr: %08X %08X", rptr_reg, wbs_dat_o);
+	 $fwrite(wdat_file, "%04X %08X\n", rptr_reg, mem_rdata_reg);
+      end
+      
+   end
+`endif
 endmodule
 `default_nettype wire

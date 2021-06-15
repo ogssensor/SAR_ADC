@@ -169,7 +169,20 @@ void main()
   // Bit 31  : enable VCO
   // Bit 9:0 : OVS = 256
     reg_mprj_slave = mprj_set_config(1, 255);
-    read_data(vco_data, 32);
+    while(((reg_mprj_status >> 1) & 0x1) == 0);
+    // read until empty
+    for (int i = 0; i < 1024; ++i)
+      vco_data[0] = reg_mprj_vco_adc;
+    /*
+    // reset wptr & rptr
+    reg_mprj_slave = (1<< 30) | (1 << 29) | (1 << 26) | 255;
+    // sample again
+    reg_mprj_slave = mprj_set_config(1, 255);
+    while(((reg_mprj_status >> 1) & 0x1) == 0);
+    // read until empty
+    for (int i = 0; i < 16; ++i)
+      vco_data[0] = reg_mprj_vco_adc;
+    */
     // Flag end of the test
     reg_mprj_datal = 0xAB900000;
 }

@@ -45,7 +45,8 @@ set ::env(VERILOG_FILES_BLACKBOX) "\
 	$script_dir/../../verilog/rtl/vco_adc_wrapper.v \
         $script_dir/../../verilog/rtl/${SRAM_MODEL_NAME}.v \
         $script_dir/../../verilog/rtl/vco_r100.v \
-        $script_dir/../../verilog/rtl/vco.v"
+         $script_dir/../../verilog/rtl/vco.v"
+#       $script_dir/../../verilog/rtl/vco_w6_r100.v
 
 # set ::env(EXTRA_LEFS) "\
 # 	$script_dir/../../lef/vco_adc_wrapper.lef \
@@ -54,14 +55,17 @@ set ::env(VERILOG_FILES_BLACKBOX) "\
 set ::env(EXTRA_LEFS) "\
 	$script_dir/../../lef/vco_adc_wrapper.lef \
         $script_dir/../../lef/${SRAM_MODEL_NAME}.lef \
-        $script_dir/../../lef/vco_r100.lef \
+        $script_dir/../../lef/vco_w6_r100.lef \
         $script_dir/../../lef/vco.lef"
+#        $script_dir/../../lef/vco_r100.lef
+
 
 set ::env(EXTRA_GDS_FILES) "\
 	$script_dir/../../gds/vco_adc_wrapper.gds \
         $script_dir/../../gds/${SRAM_MODEL_NAME}.gds \
         $script_dir/../../gds/vco_r100.gds \
         $script_dir/../../gds/vco.gds"
+#        $script_dir/../../gds/vco_w6_r100.gds
 
 set ::env(GLB_RT_MAXLAYER) 5
 
