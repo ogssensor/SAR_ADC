@@ -26,7 +26,7 @@ set ::env(CLOCK_NET) ""
 set ::env(CLOCK_PERIOD) "10"
 set ::env(SYNTH_STRATEGY) "DELAY 2"
 set ::env(FP_SIZING) absolute
-set ::env(DIE_AREA) "0 0 300 300"
+set ::env(DIE_AREA) "0 0 270 270"
 # set ::env(FP_SIZING) relative
 # set ::env(FP_CORE_UTIL) 20
 set ::env(DESIGN_IS_CORE) 0

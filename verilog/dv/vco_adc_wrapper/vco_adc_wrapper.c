@@ -24,6 +24,18 @@
 #define reg_mprj_status  (*(volatile uint32_t*)0x30000008)
 #define reg_mprj_no_data (*(volatile uint32_t*)0x3000000C)
 
+#define FILTER_2_EN	(1 << 31)
+#define FILTER_1_EN	(1 << 30)
+#define FILTER_0_EN	(1 << 29)
+#define CLEAR_WPTR	(1 << 28)
+#define CLEAR_RPTR	(1 << 27)
+#define VCO_2_EN	(1 << 26)
+#define VCO_1_EN	(1 << 25)
+#define VCO_0_EN	(1 << 24)
+#define ADC_SEL(a)      ((a & 0x3) << 22)
+#define NUM_SAMPLES(a)  (((a-1) & 0x7FF) << 10)
+#define OVERSAMPLE(a)   (((a-1) & 0x3FF))
+
 #define VCO_IDLE    0x0
 #define VCO_WORKING 0x1
 #define VCO_EMPTY   0x2
@@ -168,10 +180,14 @@ void main()
 
   // Bit 31  : enable VCO
   // Bit 9:0 : OVS = 256
-    reg_mprj_slave = mprj_set_config(1, 255);
+    /* reg_mprj_slave = mprj_set_config(1, 255); */
+    //reg_mprj_slave = FILTER_1_EN | VCO_1_EN | ADC_SEL(1)
+    //  | NUM_SAMPLES(32) | OVERSAMPLE(256);
+    reg_mprj_slave = FILTER_2_EN | VCO_2_EN | ADC_SEL(2)
+      | NUM_SAMPLES(32) | OVERSAMPLE(255);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
-    for (int i = 0; i < 2048; ++i)
+    for (int i = 0; i < 32; ++i)
       vco_data[0] = reg_mprj_vco_adc;
     /*
     // reset wptr & rptr

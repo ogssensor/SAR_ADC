@@ -57,9 +57,6 @@ module vco_adc_wrapper #(
     inout vssd1,	// User area 1 digital ground
     inout vssd2,	// User area 2 digital ground
 `endif
-    input [10:0] phase0_in,
-    input [10:0] phase1_in,
-    input [10:0] phase2_in,
     // Wishbone Slave ports (WB MI A)
     input wb_clk_i,
     input wb_rst_i,
@@ -89,19 +86,25 @@ module vco_adc_wrapper #(
   output [9:0] mem_raddr_o,
   output [1:0] mem_wenb_o,
   output [9:0] mem_waddr_o,
-  output [31:0] mem_data_o,
+//  output [31:0] mem_data_o,
   input [31:0] mem_data_i,
   input [31:0] mem1_data_i,
   input [31:0] mem_data2_i,
   output [3:0] wmask_o,
+  output [9:0] oversample_o,
+  output [2:0] sinc3_en_o,
+  output [1:0] adc_sel_o,
+  input adc_dvalid_i,
+  input [31:0] adc_dat_i,
   output [2:0] vco_enb_o
 );
 
-   localparam MAX_SIZE=2048;
+   // localparam MAX_SIZE=2048;
+   // localparam MEMSIZE = 1024;
    localparam MEMSIZE = 1024;
-   
    reg [9:0] oversample_reg;
-   reg 	     ena_reg;
+   reg [2:0] ena_reg;
+   reg [1:0] adc_sel_reg;
    reg 	     wbs_ack_reg;
 
    reg [10:0] wptr_reg;
@@ -119,6 +122,7 @@ module vco_adc_wrapper #(
    reg 		 clear_rptr_reg;
    reg 		 ren_1d_reg;
    reg [2:0] 	 vco_en_reg;
+   reg [10:0] 	 num_samples_reg;
 
    wire [BITS-1:0] 	  adc_out;
    wire 		  adc_dvalid;
@@ -133,11 +137,15 @@ module vco_adc_wrapper #(
    wire 		  slave_sel;
    wire 		  mem_write;
    wire 		  mem_read;
-   reg [10:0] 		  phase;
    // synthesis translate_off
    integer 		  rdat_file;
    integer 		  wdat_file;
    // synthesis translate_on
+   assign oversample_o = oversample_reg;
+   assign adc_sel_o = adc_sel_reg;
+   assign sinc3_en_o = ena_reg;
+   assign adc_out = adc_dat_i;
+   
    assign rst = (~la_oenb[0]) ? la_data_in[0] : wb_rst_i;
    assign slave_sel = (wbs_adr_i[31:8] == `REG_MPRJ_SLAVE);
    
@@ -146,7 +154,8 @@ module vco_adc_wrapper #(
    assign ren_w   = ((wbs_we_i == 1'b0) & valid_w & ~wbs_ack_reg);   
    assign mem_write = adc_dvalid & (!full_1d_reg);
    assign mem_read = ren_w && (wbs_adr_i[7:0] == 8'h4);
-
+   assign adc_dvalid = adc_dvalid_i;
+   
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
 	 status_reg <= 2'b0;
@@ -177,18 +186,22 @@ module vco_adc_wrapper #(
    
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
-	 oversample_reg <= 10'b0;
-	 ena_reg        <= 1'b0;
-	 clear_wptr_reg <= 1'b0;
-	 clear_rptr_reg <= 1'b0;
-	 vco_en_reg <= 3'h0;
+	 oversample_reg		<= 10'b0;
+	 ena_reg		<= 3'b0;
+	 clear_wptr_reg		<= 1'b0;
+	 clear_rptr_reg		<= 1'b0;
+	 vco_en_reg		<= 3'h0;
+	 num_samples_reg	<= MEMSIZE-1;
+	 adc_sel_reg <= 2'h0;
       end else begin
 	 if (slave_sel && wen_w && wbs_adr_i[7:0] == 8'h00) begin
-	    ena_reg <= wbs_dat_i[31];
-	    clear_wptr_reg <= wbs_dat_i[30];
-	    clear_rptr_reg <= wbs_dat_i[29];
-	    vco_en_reg <= wbs_dat_i[28:26];
-	    oversample_reg <= wbs_dat_i[9:0];
+	    ena_reg		<= wbs_dat_i[31:29];
+	    clear_wptr_reg	<= wbs_dat_i[28];
+	    clear_rptr_reg	<= wbs_dat_i[27];
+	    vco_en_reg		<= wbs_dat_i[26:24];
+	    adc_sel_reg         <= wbs_dat_i[23:22];
+	    num_samples_reg     <= wbs_dat_i[20:10];
+	    oversample_reg	<= wbs_dat_i[9:0];
 	 end
       end
    end
@@ -196,22 +209,14 @@ module vco_adc_wrapper #(
    always @* begin
       case (wbs_adr_i[7:0]) 
 	`REG_MPRJ_VCO_CONFIG: data_o <= {ena_reg, clear_wptr_reg,
-					 clear_rptr_reg, vco_en_reg,
-					 16'h0, oversample_reg};
+					 clear_rptr_reg, vco_en_reg,adc_sel_reg,
+					 1'h0, num_samples_reg, oversample_reg};
 	`REG_MPRJ_FIFO_DATA: data_o <= fifo_out_w;
 	`REG_MPRJ_STATUS: data_o <= {30'h0, status_reg};
 	`REG_MPRJ_NUM_DATA: data_o <= num_data_reg;
 	default: data_o <= 32'h0;
       endcase // case (wbs_adr_i[7:0])
       
-   end
-   always @* begin
-      case (vco_en_reg)
-	3'b001: phase <= phase0_in;
-	3'b010: phase <= phase1_in;
-	3'b100: phase <= phase2_in;
-	default: phase <= phase0_in;
-      endcase // case (vco_en_reg)
    end
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
@@ -229,7 +234,7 @@ module vco_adc_wrapper #(
 	    wptr_reg <= 10'h0;
 	 end
 
-	 if ((wptr_reg == MAX_SIZE-1)) full_reg <= 1'b1;
+	 if ((wptr_reg == num_samples_reg)) full_reg <= 1'b1;
 	 else full_reg <= 1'b0;
 	 if (rptr_reg == wptr_reg || clear_rptr_reg) empty_reg <= 1'b1;
 	 else empty_reg <= 1'b0;
@@ -237,7 +242,7 @@ module vco_adc_wrapper #(
 	 if (adc_dvalid) full_1d_reg <= full_reg;
 	 else if (clear_wptr_reg) full_1d_reg <= 1'b0;
 
-	 if (ren_w) empty_1d_reg <= empty_reg;
+	 if (adc_dvalid) empty_1d_reg <= empty_reg;
 
 	 if (!empty_reg && mem_read) begin
 	    rptr_reg <= rptr_reg + 10'h1;
@@ -267,7 +272,7 @@ module vco_adc_wrapper #(
    assign mem_renb_o[1] = (rptr_reg >= MEMSIZE) ? ~ren_reg : 1'b1;
    assign mem_wenb_o[0] = (wptr_reg < MEMSIZE) ? ~mem_write : 1'b1;
    assign mem_wenb_o[1] = (wptr_reg >= MEMSIZE) ? ~mem_write : 1'b1;
-   assign mem_data_o = adc_out;
+   // assign mem_data_o = adc_out;
    assign fifo_out_w = mem_rdata_reg;
 
    // IO
@@ -279,15 +284,6 @@ module vco_adc_wrapper #(
    assign wmask_o = 4'hF;
 
 
-   vco_adc vco_adc_0
-     (.clk(wb_clk_i)
-      ,.rst(rst)
-      ,.phase_in(phase)
-      ,.oversample_in(oversample_reg)
-      ,.enable_in(ena_reg)
-      ,.data_out(adc_out)
-      ,.data_valid_out(adc_dvalid)
-      );
 
 `ifdef FUNCTIONAL
    // this is for debug only

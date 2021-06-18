@@ -88,13 +88,20 @@ module user_project_wrapper #(
    wire [1:0]	 wenb;
    wire [2:0] 	 a_w;
    wire [2:0] 	 vco_enb;
-   wire [31:0] 	 m2w_data2;
+   wire [31:0] 	 m2w_data2, adc_out_0, adc_out_1, adc_out_2;
+   reg [31:0] 	 adc_out;
+   wire [9:0] 	 oversample;
+   wire [2:0] 	 en;
+   wire [1:0] 	 adc_sel;
+   reg  	 adc_dvalid;
+   wire [2:0] 	 sinc3_dvalid;
+
 /*--------------------------------------*/
 /* User project is instantiated  here   */
 /*--------------------------------------*/
 
    vco_adc_wrapper
-     vco_adc_1 (
+     vco_adc_wrapper_1 (
 `ifdef USE_POWER_PINS
 	   .vdda1(vdda1),	// User area 1 3.3V power
 	   .vdda2(vdda2),	// User area 2 3.3V power
@@ -131,44 +138,45 @@ module user_project_wrapper #(
 	   .io_in (io_in),
 	   .io_out(io_out),
 	   .io_oeb(io_oeb),
-	   // phase from vco
-	   .phase0_in(phase0),
-	   .phase1_in(phase1),
-	   .phase2_in(phase2),
 	   // IRQ
 	   .irq(user_irq),
            .mem_renb_o(renb),
            .mem_raddr_o(raddr),
            .mem_wenb_o(wenb),
            .mem_waddr_o(waddr),
-           .mem_data_o(w2m_data),
            .mem_data_i(m2w_data0),
            .mem1_data_i(m2w_data1),
-           .mem_data2_i(m2w_data2),
            .wmask_o(wmask),
+           .oversample_o(oversample),
+           .sinc3_en_o(en),
+           .adc_sel_o(adc_sel),
+           .adc_dvalid_i(adc_dvalid),
+           .adc_dat_i(adc_out),
            .vco_enb_o(vco_enb)
 	   );
+   assign w2m_data = adc_out;
 
-//    sky130_sram_8kbyte_1rw1r_32x2048_8
-//      mem_0 (
-// `ifdef USE_POWER_PINS
-// 	    .vccd1(vccd1),
-// 	    .vssd1(vssd1),
-// `endif
-// // Port 0: RW
-// 	    .clk0(wb_clk_i),
-// 	    .csb0(wenb),
-// 	    .web0(wenb),
-// 	    .wmask0(wmask),
-// 	    .addr0(waddr),
-// 	    .din0(w2m_data),
-// 	    .dout0(m2w_data2),
-// // Port 1: R
-// 	    .clk1(wb_clk_i),
-// 	    .csb1(renb),
-// 	    .addr1(raddr),
-// 	    .dout1(m2w_data)
-//   );
+   always @* begin
+      case (adc_sel)
+	 2'b00: begin
+	    adc_dvalid <= sinc3_dvalid[0];
+	    adc_out <= adc_out_0;
+	 end
+	 2'b01: begin
+	    adc_dvalid <= sinc3_dvalid[1];
+	    adc_out <= adc_out_1;
+	 end
+	 2'b10: begin
+	    adc_dvalid <= sinc3_dvalid[2];
+	    adc_out <= adc_out_2;
+	 end
+	 default: begin 
+	    adc_dvalid <= sinc3_dvalid[0];
+	    adc_out <= adc_out_0;
+	 end
+      endcase // case (adc_sel)
+   end
+
    sky130_sram_4kbyte_1rw1r_32x1024_8
      mem_0 (
 `ifdef USE_POWER_PINS
@@ -189,6 +197,7 @@ module user_project_wrapper #(
 	    .addr1(raddr),
 	    .dout1(m2w_data0)
   );
+
    sky130_sram_4kbyte_1rw1r_32x1024_8
      mem_1 (
 `ifdef USE_POWER_PINS
@@ -209,6 +218,17 @@ module user_project_wrapper #(
 	    .addr1(raddr),
 	    .dout1(m2w_data1)
   );
+
+   vco_adc vco_adc_0
+     (.clk(wb_clk_i)
+      ,.rst(wb_rst_i)
+      ,.phase_in(phase0)
+      ,.oversample_in(oversample)
+      ,.enable_in(en[0])
+      ,.data_out(adc_out_0)
+      ,.data_valid_out(sinc3_dvalid[0])
+      );
+
    vco vco_0 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
@@ -216,11 +236,21 @@ module user_project_wrapper #(
 	      .vccd2(vccd2),
 	      .vssd2(vssd2),
 `endif
-	      // .enb(vco_enb[0]),
+	      .enb(vco_enb[0]),
 	      .input_analog(a_w[0]),
 	      .p(phase0));
-   assign analog_io[2] = phase0[9];
-   assign analog_io[1] = a_w[0];
+   assign analog_io[10] = phase0[6];
+   assign analog_io[9] = a_w[0];
+
+   vco_adc vco_adc_1
+     (.clk(wb_clk_i)
+      ,.rst(wb_rst_i)
+      ,.phase_in(phase1)
+      ,.oversample_in(oversample)
+      ,.enable_in(en[1])
+      ,.data_out(adc_out_1)
+      ,.data_valid_out(sinc3_dvalid[1])
+      );
 
    vco vco_1 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
@@ -229,11 +259,21 @@ module user_project_wrapper #(
 	      .vccd2(vccd2),
 	      .vssd2(vssd2),
 `endif
-	      // .enb(vco_enb[1]),
+	      .enb(vco_enb[1]),
 	      .input_analog(a_w[1]),
 	      .p(phase1));
-   assign analog_io[4] = phase1[9];
-   assign analog_io[3] = a_w[1];
+   assign analog_io[13] = phase1[6];
+   assign analog_io[12] = a_w[1];
+
+   vco_adc vco_adc_2
+     (.clk(wb_clk_i)
+      ,.rst(wb_rst_i)
+      ,.phase_in(phase2)
+      ,.oversample_in(oversample)
+      ,.enable_in(en[2])
+      ,.data_out(adc_out_2)
+      ,.data_valid_out(sinc3_dvalid[2])
+      );
 
    vco vco_2 (// .clk(wb_clk_i), 
 	  // .rst(wb_rst_i),
@@ -245,8 +285,8 @@ module user_project_wrapper #(
 	      .enb(vco_enb[2]),
 	      .input_analog(a_w[2]),
 	      .p(phase2));
-   assign analog_io[6] = phase2[9];
-   assign analog_io[5] = a_w[2];
+   assign analog_io[16] = phase2[6];
+   assign analog_io[15] = a_w[2];
 
 endmodule	// user_project_wrapper
 
