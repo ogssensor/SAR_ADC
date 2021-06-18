@@ -11,7 +11,7 @@ module vco_w6_r100
    // input 		    clk,
    // input 		    rst,
    input 		    enb,
-   input 		    input_analog, 
+   inout 		    input_analog, 
    output [PHASE_WIDTH-1:0] p
    );
 `ifdef FUNCTIONAL

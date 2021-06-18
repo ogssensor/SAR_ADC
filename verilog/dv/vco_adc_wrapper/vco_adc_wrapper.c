@@ -171,7 +171,7 @@ void main()
     reg_mprj_slave = mprj_set_config(1, 255);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
-    for (int i = 0; i < 1024; ++i)
+    for (int i = 0; i < 2048; ++i)
       vco_data[0] = reg_mprj_vco_adc;
     /*
     // reset wptr & rptr

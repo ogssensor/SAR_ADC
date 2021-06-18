@@ -78,13 +78,15 @@ module user_project_wrapper #(
     output [2:0] user_irq
 );
    wire [10:0] 	 phase0, phase1, phase2;
-   wire [31:0] 	 m2w_data;
+   wire [31:0] 	 m2w_data0;
+   wire [31:0] 	 m2w_data1;
    wire [31:0] 	 w2m_data;
    wire [9:0] 	 raddr;
    wire [9:0] 	 waddr;
    wire [3:0] 	 wmask;
-   wire 	 renb;
-   wire 	 wenb;
+   wire [1:0]	 renb;
+   wire [1:0]	 wenb;
+   wire [2:0] 	 a_w;
    wire [2:0] 	 vco_enb;
    wire [31:0] 	 m2w_data2;
 /*--------------------------------------*/
@@ -140,7 +142,8 @@ module user_project_wrapper #(
            .mem_wenb_o(wenb),
            .mem_waddr_o(waddr),
            .mem_data_o(w2m_data),
-           .mem_data_i(m2w_data),
+           .mem_data_i(m2w_data0),
+           .mem1_data_i(m2w_data1),
            .mem_data2_i(m2w_data2),
            .wmask_o(wmask),
            .vco_enb_o(vco_enb)
@@ -174,17 +177,37 @@ module user_project_wrapper #(
 `endif
 // Port 0: RW
 	    .clk0(wb_clk_i),
-	    .csb0(wenb),
-	    .web0(wenb),
+	    .csb0(wenb[0]),
+	    .web0(wenb[0]),
 	    .wmask0(wmask),
 	    .addr0(waddr),
 	    .din0(w2m_data),
 	    .dout0(m2w_data2),
 // Port 1: R
 	    .clk1(wb_clk_i),
-	    .csb1(renb),
+	    .csb1(renb[0]),
 	    .addr1(raddr),
-	    .dout1(m2w_data)
+	    .dout1(m2w_data0)
+  );
+   sky130_sram_4kbyte_1rw1r_32x1024_8
+     mem_1 (
+`ifdef USE_POWER_PINS
+	    .vccd1(vccd1),
+	    .vssd1(vssd1),
+`endif
+// Port 0: RW
+	    .clk0(wb_clk_i),
+	    .csb0(wenb[1]),
+	    .web0(wenb[1]),
+	    .wmask0(wmask),
+	    .addr0(waddr),
+	    .din0(w2m_data),
+	    .dout0(),
+// Port 1: R
+	    .clk1(wb_clk_i),
+	    .csb1(renb[1]),
+	    .addr1(raddr),
+	    .dout1(m2w_data1)
   );
    vco vco_0 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
@@ -193,10 +216,12 @@ module user_project_wrapper #(
 	      .vccd2(vccd2),
 	      .vssd2(vssd2),
 `endif
-	      .enb(vco_enb[0]),
-	      .input_analog(analog_io[1]),
+	      // .enb(vco_enb[0]),
+	      .input_analog(a_w[0]),
 	      .p(phase0));
    assign analog_io[2] = phase0[9];
+   assign analog_io[1] = a_w[0];
+
    vco vco_1 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
@@ -204,10 +229,12 @@ module user_project_wrapper #(
 	      .vccd2(vccd2),
 	      .vssd2(vssd2),
 `endif
-	      .enb(vco_enb[1]),
-	      .input_analog(analog_io[3]),
+	      // .enb(vco_enb[1]),
+	      .input_analog(a_w[1]),
 	      .p(phase1));
    assign analog_io[4] = phase1[9];
+   assign analog_io[3] = a_w[1];
+
    vco vco_2 (// .clk(wb_clk_i), 
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
@@ -216,9 +243,10 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[2]),
-	      .input_analog(analog_io[5]),
+	      .input_analog(a_w[2]),
 	      .p(phase2));
    assign analog_io[6] = phase2[9];
+   assign analog_io[5] = a_w[2];
 
 endmodule	// user_project_wrapper
 

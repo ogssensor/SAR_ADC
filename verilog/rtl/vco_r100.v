@@ -11,7 +11,7 @@ module vco_r100
    // input 		    clk,
    // input 		    rst,
    input 		    enb,
-   input 		    input_analog, 
+   inout 		    input_analog, 
    output [PHASE_WIDTH-1:0] p
    );
 `ifdef FUNCTIONAL
@@ -53,3 +53,4 @@ module vco_r100
    assign p = (enb == 1'b0) ? vco_val[counter_reg] : 0;
 `endif
 endmodule // vco
+

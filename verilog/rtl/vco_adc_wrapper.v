@@ -85,25 +85,27 @@ module vco_adc_wrapper #(
     // IRQ
     output [2:0] irq,
   // memory interface
-  output mem_renb_o,
+  output [1:0] mem_renb_o,
   output [9:0] mem_raddr_o,
-  output mem_wenb_o,
+  output [1:0] mem_wenb_o,
   output [9:0] mem_waddr_o,
   output [31:0] mem_data_o,
   input [31:0] mem_data_i,
+  input [31:0] mem1_data_i,
   input [31:0] mem_data2_i,
   output [3:0] wmask_o,
   output [2:0] vco_enb_o
 );
 
-   localparam MAX_SIZE=1024;
+   localparam MAX_SIZE=2048;
+   localparam MEMSIZE = 1024;
    
    reg [9:0] oversample_reg;
    reg 	     ena_reg;
    reg 	     wbs_ack_reg;
 
-   reg [9:0] wptr_reg;
-   reg [9:0] rptr_reg;
+   reg [10:0] wptr_reg;
+   reg [10:0] rptr_reg;
 
    reg [1:0] 	 status_reg;
    reg [31:0] 	 num_data_reg;
@@ -257,12 +259,14 @@ module vco_adc_wrapper #(
       if (empty_1d_reg && adc_dvalid)
 	mem_rdata_reg <= adc_out;
       else if (ren_1d_reg == 1'b1)
-	mem_rdata_reg <= mem_data_i;
+	mem_rdata_reg <= (rptr_reg < MEMSIZE) ? mem_data_i : mem1_data_i;
    end
-   assign mem_waddr_o = wptr_reg;
-   assign mem_raddr_o = rptr_reg;
-   assign mem_renb_o = ~ren_reg;
-   assign mem_wenb_o = ~mem_write;
+   assign mem_waddr_o = wptr_reg[9:0];
+   assign mem_raddr_o = rptr_reg[9:0];
+   assign mem_renb_o[0] = (rptr_reg < MEMSIZE) ? ~ren_reg : 1'b1;
+   assign mem_renb_o[1] = (rptr_reg >= MEMSIZE) ? ~ren_reg : 1'b1;
+   assign mem_wenb_o[0] = (wptr_reg < MEMSIZE) ? ~mem_write : 1'b1;
+   assign mem_wenb_o[1] = (wptr_reg >= MEMSIZE) ? ~mem_write : 1'b1;
    assign mem_data_o = adc_out;
    assign fifo_out_w = mem_rdata_reg;
 
@@ -274,39 +278,6 @@ module vco_adc_wrapper #(
    assign vco_enb_o = ~vco_en_reg;
    assign wmask_o = 4'hF;
 
-   // fifo
-   //   #(.DEPTH_WIDTH(11)
-   //     ,.DATA_WIDTH(BITS))
-   // sync_fifo
-   //   (.clk(wb_clk_i)
-   //    ,.rst(rst)
-   //    ,.wr_en_i(adc_dvalid)
-   //    ,.wr_data_i(adc_out)
-   //    ,.full_o(full_out_w)
-   //    ,.rd_en_i(ren_w)
-   //    ,.empty_o(empty_out_w)
-   //    ,.rd_data_o(fifo_out_w));
-   
-//    sky130_sram_8kbyte_1rw1r_32x2048_8
-//      mem_0 (
-// `ifdef USE_POWER_PINS
-// 	    .vccd1(vccd1),
-// 	    .vssd1(vccd1),
-// `endif
-// // Port 0: RW
-// 	    .clk0(wb_clk_i),
-// 	    .csb0(1'b0),
-// 	    .web0(~adc_dvalid),
-// 	    .wmask0(4'b1111),
-// 	    .addr0(write_cnt_reg),
-// 	    .din0(adc_out),
-// 	    .dout0(),
-// // Port 1: R
-// 	    .clk1(wb_clk_i),
-// 	    .csb1(1'b0),
-// 	    .addr1(read_cnt_reg),
-// 	    .dout1()
-//   );
 
    vco_adc vco_adc_0
      (.clk(wb_clk_i)
