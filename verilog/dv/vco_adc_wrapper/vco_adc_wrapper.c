@@ -27,14 +27,18 @@
 #define FILTER_2_EN	(1 << 31)
 #define FILTER_1_EN	(1 << 30)
 #define FILTER_0_EN	(1 << 29)
-#define CLEAR_WPTR	(1 << 28)
-#define CLEAR_RPTR	(1 << 27)
-#define VCO_2_EN	(1 << 26)
-#define VCO_1_EN	(1 << 25)
-#define VCO_0_EN	(1 << 24)
-#define ADC_SEL(a)      ((a & 0x3) << 22)
+#define VCO_2_EN	(1 << 28)
+#define VCO_1_EN	(1 << 27)
+#define VCO_0_EN	(1 << 26)
+#define ADC_SEL(a)      ((a & 0x3) << 24)
+#define CLEAR_WPTR	(1 << 23)
+#define CLEAR_RPTR	(1 << 22)
+#define IO_EN		(1 << 21)
 #define NUM_SAMPLES(a)  (((a-1) & 0x7FF) << 10)
 #define OVERSAMPLE(a)   (((a-1) & 0x3FF))
+#define VCO_ADC0_EN	(FILTER_0_EN | VCO_0_EN | ADC_SEL(0))
+#define VCO_ADC1_EN	(FILTER_1_EN | VCO_1_EN | ADC_SEL(1))
+#define VCO_ADC2_EN	(FILTER_2_EN | VCO_2_EN | ADC_SEL(2))
 
 #define VCO_IDLE    0x0
 #define VCO_WORKING 0x1
@@ -183,11 +187,10 @@ void main()
     /* reg_mprj_slave = mprj_set_config(1, 255); */
     //reg_mprj_slave = FILTER_1_EN | VCO_1_EN | ADC_SEL(1)
     //  | NUM_SAMPLES(32) | OVERSAMPLE(256);
-    reg_mprj_slave = FILTER_2_EN | VCO_2_EN | ADC_SEL(2)
-      | NUM_SAMPLES(32) | OVERSAMPLE(255);
+    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(1024) | OVERSAMPLE(2);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i < 1024; ++i)
       vco_data[0] = reg_mprj_vco_adc;
     /*
     // reset wptr & rptr

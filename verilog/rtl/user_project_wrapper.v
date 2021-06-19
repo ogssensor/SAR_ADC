@@ -81,8 +81,8 @@ module user_project_wrapper #(
    wire [31:0] 	 m2w_data0;
    wire [31:0] 	 m2w_data1;
    wire [31:0] 	 w2m_data;
-   wire [9:0] 	 raddr;
-   wire [9:0] 	 waddr;
+   wire [8:0] 	 raddr;
+   wire [8:0] 	 waddr;
    wire [3:0] 	 wmask;
    wire [1:0]	 renb;
    wire [1:0]	 wenb;
@@ -129,9 +129,9 @@ module user_project_wrapper #(
 
 	   // Logic Analyzer
 
-	   .la_data_in(la_data_in),
-	   .la_data_out(la_data_out),
-	   .la_oenb (la_oenb),
+	   // .la_data_in(la_data_in),
+	   // .la_data_out(la_data_out),
+	   // .la_oenb (la_oenb),
 
 	   // IO Pads
 
@@ -144,40 +144,43 @@ module user_project_wrapper #(
            .mem_raddr_o(raddr),
            .mem_wenb_o(wenb),
            .mem_waddr_o(waddr),
+           .mem_data_o(w2m_data),
            .mem_data_i(m2w_data0),
            .mem1_data_i(m2w_data1),
            .wmask_o(wmask),
            .oversample_o(oversample),
            .sinc3_en_o(en),
-           .adc_sel_o(adc_sel),
-           .adc_dvalid_i(adc_dvalid),
-           .adc_dat_i(adc_out),
+           // .adc_sel_o(adc_sel),
+           .adc_dvalid_i(sinc3_dvalid),
+           .adc0_dat_i(adc_out_0),
+           .adc1_dat_i(adc_out_1),
+           .adc2_dat_i(adc_out_2),
            .vco_enb_o(vco_enb)
 	   );
-   assign w2m_data = adc_out;
+   // assign w2m_data = adc_out;
 
-   always @* begin
-      case (adc_sel)
-	 2'b00: begin
-	    adc_dvalid <= sinc3_dvalid[0];
-	    adc_out <= adc_out_0;
-	 end
-	 2'b01: begin
-	    adc_dvalid <= sinc3_dvalid[1];
-	    adc_out <= adc_out_1;
-	 end
-	 2'b10: begin
-	    adc_dvalid <= sinc3_dvalid[2];
-	    adc_out <= adc_out_2;
-	 end
-	 default: begin 
-	    adc_dvalid <= sinc3_dvalid[0];
-	    adc_out <= adc_out_0;
-	 end
-      endcase // case (adc_sel)
-   end
+   // always @* begin
+   //    case (adc_sel)
+   // 	 2'b00: begin
+   // 	    adc_dvalid <= sinc3_dvalid[0];
+   // 	    adc_out <= adc_out_0;
+   // 	 end
+   // 	 2'b01: begin
+   // 	    adc_dvalid <= sinc3_dvalid[1];
+   // 	    adc_out <= adc_out_1;
+   // 	 end
+   // 	 2'b10: begin
+   // 	    adc_dvalid <= sinc3_dvalid[2];
+   // 	    adc_out <= adc_out_2;
+   // 	 end
+   // 	 default: begin 
+   // 	    adc_dvalid <= sinc3_dvalid[0];
+   // 	    adc_out <= adc_out_0;
+   // 	 end
+   //    endcase // case (adc_sel)
+   // end
 
-   sky130_sram_4kbyte_1rw1r_32x1024_8
+   sky130_sram_2kbyte_1rw1r_32x512_8
      mem_0 (
 `ifdef USE_POWER_PINS
 	    .vccd1(vccd1),
@@ -190,7 +193,7 @@ module user_project_wrapper #(
 	    .wmask0(wmask),
 	    .addr0(waddr),
 	    .din0(w2m_data),
-	    .dout0(m2w_data2),
+	    .dout0(),
 // Port 1: R
 	    .clk1(wb_clk_i),
 	    .csb1(renb[0]),
@@ -198,7 +201,7 @@ module user_project_wrapper #(
 	    .dout1(m2w_data0)
   );
 
-   sky130_sram_4kbyte_1rw1r_32x1024_8
+   sky130_sram_2kbyte_1rw1r_32x512_8
      mem_1 (
 `ifdef USE_POWER_PINS
 	    .vccd1(vccd1),
@@ -237,10 +240,9 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[0]),
-	      .input_analog(a_w[0]),
+	      .input_analog(analog_io[9]),
 	      .p(phase0));
-   assign analog_io[10] = phase0[6];
-   assign analog_io[9] = a_w[0];
+   // assign analog_io[9] = a_w[0];
 
    vco_adc vco_adc_1
      (.clk(wb_clk_i)
@@ -260,10 +262,9 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[1]),
-	      .input_analog(a_w[1]),
+	      .input_analog(analog_io[12]),
 	      .p(phase1));
-   assign analog_io[13] = phase1[6];
-   assign analog_io[12] = a_w[1];
+   // assign analog_io[12] = a_w[1];
 
    vco_adc vco_adc_2
      (.clk(wb_clk_i)
@@ -283,11 +284,14 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[2]),
-	      .input_analog(a_w[2]),
+	      .input_analog(analog_io[15]),
 	      .p(phase2));
+   // assign analog_io[15] = a_w[2];
+`ifndef FUNCTIONAL
+   assign analog_io[13] = phase1[6];
    assign analog_io[16] = phase2[6];
-   assign analog_io[15] = a_w[2];
-
+   assign analog_io[10] = phase0[6];
+`endif
 endmodule	// user_project_wrapper
 
 `default_nettype wire

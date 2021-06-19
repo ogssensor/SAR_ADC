@@ -38,7 +38,7 @@ set ::env(CLOCK_PERIOD) "10"
 ## Internal Macros
 ### Macro Placement
 set ::env(MACRO_PLACEMENT_CFG) $script_dir/macro.cfg
-set SRAM_MODEL_NAME "sky130_sram_4kbyte_1rw1r_32x1024_8"
+set SRAM_MODEL_NAME "sky130_sram_2kbyte_1rw1r_32x512_8"
 ### Black-box verilog and views
 set ::env(VERILOG_FILES_BLACKBOX) "\
 	$script_dir/../../caravel/verilog/rtl/defines.v \
@@ -58,6 +58,7 @@ set ::env(EXTRA_LEFS) "\
 	$script_dir/../../lef/vco_adc_wrapper.lef \
         $script_dir/../../lef/${SRAM_MODEL_NAME}.lef \
         $script_dir/../../lef/vco_adc.lef \
+        $script_dir/../../lef/vco_r100.lef \
         $script_dir/../../lef/vco.lef"
 #        $script_dir/../../lef/vco.lef"
 #        $script_dir/../../lef/vco_r100.lef
@@ -67,6 +68,7 @@ set ::env(EXTRA_GDS_FILES) "\
 	$script_dir/../../gds/vco_adc_wrapper.gds \
         $script_dir/../../gds/${SRAM_MODEL_NAME}.gds \
         $script_dir/../../gds/vco_adc.gds \
+        $script_dir/../../gds/vco_r100.gds \
         $script_dir/../../gds/vco.gds"
 #        $script_dir/../../gds/vco.gds"
 #        $script_dir/../../gds/vco_w6_r100.gds
@@ -76,8 +78,8 @@ set ::env(GLB_RT_MAXLAYER) 5
 set ::env(FP_PDN_CHECK_NODES) 0
 
 # The following is because there are no std cells in the example wrapper project.
-set ::env(SYNTH_TOP_LEVEL) 0
-set ::env(PL_RANDOM_GLB_PLACEMENT) 0
+set ::env(SYNTH_TOP_LEVEL) 1
+set ::env(PL_RANDOM_GLB_PLACEMENT) 1
 
 set ::env(PL_RESIZER_DESIGN_OPTIMIZATIONS) 0
 set ::env(PL_RESIZER_TIMING_OPTIMIZATIONS) 0
@@ -86,7 +88,7 @@ set ::env(PL_RESIZER_BUFFER_OUTPUT_PORTS) 0
 
 set ::env(DIODE_INSERTION_STRATEGY) 0
 set ::env(FILL_INSERTION) 0
-set ::env(TAP_DECAP_INSERTION) 1
+set ::env(TAP_DECAP_INSERTION) 0
 set ::env(CLOCK_TREE_SYNTH) 0
 ## temporary disable klayout XOR check because of a large number of viols
 set ::env(RUN_KLAYOUT_XOR) 0
@@ -94,7 +96,6 @@ set ::env(RUN_KLAYOUT_XOR) 0
 set ::env(USE_SRAM_ABSTRACT) 1
 ## this needs a pdk build with the sram macros
 set ::env(SRAM_ABSTRACT_MODEL) ${SRAM_MODEL_NAME}.mag
-set ::env(PL_BASIC_PLACEMENT) 0
-set ::env(PL_ROUTABILITY_DRIVEN) 1
+
 # set ::env(PL_TARGET_DENSITY) 0.05
-set ::env(PL_SKIP_INITIAL_PLACEMENT) 1
+# set ::env(PL_SKIP_INITIAL_PLACEMENT) 1

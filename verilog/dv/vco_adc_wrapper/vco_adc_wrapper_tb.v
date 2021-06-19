@@ -33,16 +33,16 @@ module vco_adc_wrapper_tb;
 
    initial begin
       $dumpfile("vco_adc_wrapper.vcd");
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_wrapper_1);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_0);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_1);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_2);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_0);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_1);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_2);
-      $dumpvars(1, vco_adc_wrapper_tb.uut.mprj);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_wrapper_1);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_0);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_1);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_adc_2);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_0);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_1);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_2);
+      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj);
 
-      repeat (500) begin
+      repeat (200) begin
 	 repeat (10000) @(posedge clock);
 	 $display("+10000 cycles");
       end

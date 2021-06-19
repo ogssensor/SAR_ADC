@@ -11,7 +11,7 @@ module vco
    // input 		    clk,
    // input 		    rst,
    input 		    enb,
-   inout 		    input_analog, 
+   input 		    input_analog, 
    output [PHASE_WIDTH-1:0] p
    );
 `ifdef FUNCTIONAL
