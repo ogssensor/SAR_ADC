@@ -90,7 +90,6 @@ module vco_adc_wrapper #(
   output [31:0] mem_data_o,
   input [31:0] mem_data_i,
   input [31:0] mem1_data_i,
-  input [31:0] mem_data2_i,
   output [3:0] wmask_o,
   output [9:0] oversample_o,
   output [2:0] sinc3_en_o,

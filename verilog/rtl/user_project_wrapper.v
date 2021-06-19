@@ -232,7 +232,7 @@ module user_project_wrapper #(
       ,.data_valid_out(sinc3_dvalid[0])
       );
 
-   vco vco_0 (// .clk(wb_clk_i),
+   vco_r100 vco_0 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
@@ -276,7 +276,7 @@ module user_project_wrapper #(
       ,.data_valid_out(sinc3_dvalid[2])
       );
 
-   vco vco_2 (// .clk(wb_clk_i), 
+   vco_r100 vco_2 (// .clk(wb_clk_i), 
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
