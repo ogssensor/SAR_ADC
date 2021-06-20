@@ -22,6 +22,9 @@
     `default_nettype wire
     `include "gl/user_project_wrapper.v"
     `include "gl/vco_adc_wrapper.v"
+    `include "gl/vco_adc.v"
+    `include "sky130_sram_2kbyte_1rw1r_32x512_8.v"
+    `include "vco_r100.v"
     `include "vco.v"
 `else
     `include "user_project_wrapper.v"

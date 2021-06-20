@@ -12,7 +12,7 @@ module vco_adc_wrapper_tb;
    reg power2;
    reg RSTB;
 
-   wire [15:0] checkbits;
+   wire [7:0] checkbits;
    wire [7:0]  spivalue;
    wire        gpio;
    wire        flash_csb;
@@ -22,7 +22,7 @@ module vco_adc_wrapper_tb;
    wire [37:0] mprj_io;
    wire        SDO;
 
-   assign checkbits = mprj_io[31:16];
+   assign checkbits = mprj_io[31:24];
    assign spivalue  = mprj_io[15:0];
 
    always #10 clock <= (clock === 1'b0);
@@ -40,9 +40,11 @@ module vco_adc_wrapper_tb;
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_0);
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_1);
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_2);
-      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj);
+      $dumpvars(0, vco_adc_wrapper_tb.uut);
 
       repeat (200) begin
+      // repeat (5) begin
 	 repeat (10000) @(posedge clock);
 	 $display("+10000 cycles");
       end
@@ -55,9 +57,9 @@ module vco_adc_wrapper_tb;
 
    //Monitor
    initial begin
-      wait(checkbits == 16'hAB40);
+      wait(checkbits == 8'hB4);
       $display("Monitor: Test MPRJ (RTL) Started!");
-      wait(checkbits == 16'hAB90);
+      wait(checkbits == 8'hB9);
       $display("Monitor: Test MPRJ (RTL) Passed!");
       $finish;
    end

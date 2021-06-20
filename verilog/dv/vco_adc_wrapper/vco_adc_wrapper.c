@@ -118,76 +118,27 @@ void main()
     reg_mprj_io_26 = GPIO_MODE_MGMT_STD_OUTPUT;
     reg_mprj_io_25 = GPIO_MODE_MGMT_STD_OUTPUT;
     reg_mprj_io_24 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_23 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_22 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_21 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_20 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_19 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_18 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_17 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_16 = GPIO_MODE_MGMT_STD_OUTPUT;
 
-    reg_mprj_io_15 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_14 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_13 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_12 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_11 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_10 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_9  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_8  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_7  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_5  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_4  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_3  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_2  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_1  = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_0  = GPIO_MODE_USER_STD_OUTPUT;
-
-    reg_mprj_io_6  = GPIO_MODE_MGMT_STD_OUTPUT;
-
-    // Set UART clock to 64 kbaud (enable before I/O configuration)
-    reg_uart_clkdiv = 625;
-    reg_uart_enable = 1;
+    // analog_io 9-10
+    reg_mprj_io_16 = GPIO_MODE_USER_STD_ANALOG;
+    reg_mprj_io_17 = GPIO_MODE_USER_STD_ANALOG;
+    // analog_io 12-13
+    reg_mprj_io_20 = GPIO_MODE_USER_STD_ANALOG;
+    reg_mprj_io_19 = GPIO_MODE_USER_STD_ANALOG;
+    // analog_io 15-16
+    reg_mprj_io_23 = GPIO_MODE_USER_STD_ANALOG;
+    reg_mprj_io_22 = GPIO_MODE_USER_STD_ANALOG;
 
     /* Apply configuration */
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
 
-    /* TEST:  Recast channels 35 to 32 to allow input to user project	*/
-    /* This is done locally only:  Do not run reg_mprj_xfer!		*/
-    reg_mprj_io_35 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_34 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_33 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_32 = GPIO_MODE_MGMT_STD_OUTPUT;
-
-    // Configure LA probes [31:0], [127:64] as inputs to the cpu
-    // Configure LA probes [63:32] as outputs from the cpu
     reg_la0_oenb = reg_la0_iena = 0xFFFFFFFF;    // [31:0]
-    /* reg_la1_oenb = reg_la1_iena = 0x00000000;    // [63:32] */
-    /* reg_la2_oenb = reg_la2_iena = 0xFFFFFFFF;    // [95:64] */
-    /* reg_la3_oenb = reg_la3_iena = 0xFFFFFFFF;    // [127:96] */
 
     // Flag start of the test
-    reg_mprj_datal = 0xAB400000;
+    reg_mprj_datal = 0xB4000000;
 
-    // Set Counter value to zero through LA probes [63:32]
-    // reg_la1_data = 0x00000000;
-
-    // Configure LA probes from [63:32] as inputs to disable counter write
-    // reg_la1_oenb = reg_la1_iena = 0xFFFFFFFF;
-
-    // reg_mprj_datal = 0xAB410000;
-    // reg_mprj_datah = 0x00000000;
-
-    // Test ability to force data on channel 37
-    // NOTE:  Only the low 6 bits of reg_mprj_datah are meaningful
-
-  // Bit 31  : enable VCO
-  // Bit 9:0 : OVS = 256
-    /* reg_mprj_slave = mprj_set_config(1, 255); */
-    //reg_mprj_slave = FILTER_1_EN | VCO_1_EN | ADC_SEL(1)
-    //  | NUM_SAMPLES(32) | OVERSAMPLE(256);
-    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(1024) | OVERSAMPLE(2);
+    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(1024) | OVERSAMPLE(16);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
     for (int i = 0; i < 1024; ++i)
@@ -203,5 +154,5 @@ void main()
       vco_data[0] = reg_mprj_vco_adc;
     */
     // Flag end of the test
-    reg_mprj_datal = 0xAB900000;
+    reg_mprj_datal = 0xB9000000;
 }
