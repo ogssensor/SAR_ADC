@@ -138,10 +138,10 @@ void main()
     // Flag start of the test
     reg_mprj_datal = 0xB4000000;
 
-    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(1024) | OVERSAMPLE(16);
+    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(32) | OVERSAMPLE(16);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
-    for (int i = 0; i < 1024; ++i)
+    for (int i = 0; i < 32; ++i)
       vco_data[0] = reg_mprj_vco_adc;
     /*
     // reset wptr & rptr

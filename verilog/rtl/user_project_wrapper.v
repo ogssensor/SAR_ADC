@@ -253,7 +253,6 @@ module user_project_wrapper #(
       ,.data_out(adc_out_1)
       ,.data_valid_out(sinc3_dvalid[1])
       );
-
    vco vco_1 (// .clk(wb_clk_i),
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
@@ -287,11 +286,9 @@ module user_project_wrapper #(
 	      .input_analog(analog_io[15]),
 	      .p(phase2));
    // assign analog_io[15] = a_w[2];
-`ifndef FUNCTIONAL
    assign analog_io[13] = phase1[6];
    assign analog_io[16] = phase2[6];
    assign analog_io[10] = phase0[6];
-`endif
 endmodule	// user_project_wrapper
 
 `default_nettype wire
