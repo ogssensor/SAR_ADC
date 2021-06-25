@@ -64,14 +64,14 @@ jobs:
        - name: Install The PDK
          run:  bash ${GITHUB_WORKSPACE}/.github/scripts/dv/pdkBuild.sh
          env: 
-          OPENLANE_TAG: v0.15
+          OPENLANE_TAG: v0.21
           
        - name: Install The Dockerized DV Setup
          run:  docker pull efabless/dv_setup:latest
        
        - name: Run DV tests
          # Run test number 0,1,2,3,4 in one job                            <test-ids>   <sim-mode>
-         run: bash ${GITHUB_WORKSPACE}/.github/scripts/dv/run-dv-wrapper.sh 0,1      RTL
+         run: bash ${GITHUB_WORKSPACE}/.github/scripts/dv/run-dv-wrapper.sh 0,1,2      RTL
 
   # dv_gl:
   #   runs-on: ubuntu-latest
