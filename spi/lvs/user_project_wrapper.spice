@@ -105,14 +105,19 @@
 + wmask_o[1] wmask_o[2] wmask_o[3] vccd1 vssd1 vccd2 vssd2 vdda1 vssa1 vdda2 vssa2
 .ends
 
-* Black-box entry subcircuit for vco_r100 abstract view
-.subckt vco_r100 p[0] p[1] p[2] p[3] p[4] p[5] p[6] p[7] p[8] p[9] p[10] input_analog
-+ vccd2 vssd2 enb
+* Black-box entry subcircuit for vco_w6_r100 abstract view
+.subckt vco_w6_r100 p[9] p[7] p[5] p[3] p[1] p[0] p[2] p[4] p[6] p[8] p[10] enb input_analog
++ vccd2 vssd2
 .ends
 
 * Black-box entry subcircuit for vco abstract view
 .subckt vco p[0] p[1] p[2] p[3] p[4] p[5] p[6] p[7] p[8] p[9] p[10] input_analog vccd2
 + vssd2 enb
+.ends
+
+* Black-box entry subcircuit for vco_r100 abstract view
+.subckt vco_r100 p[0] p[1] p[2] p[3] p[4] p[5] p[6] p[7] p[8] p[9] p[10] input_analog
++ vccd2 vssd2 enb
 .ends
 
 .subckt user_project_wrapper analog_io[0] analog_io[10] analog_io[11] analog_io[12]
@@ -384,9 +389,9 @@ Xvco_adc_2 wb_clk_i vco_adc_2/data_out[0] vco_adc_2/data_out[10] vco_adc_2/data_
 + vco_adc_2/oversample_in[7] vco_adc_2/oversample_in[8] vco_adc_2/oversample_in[9]
 + vco_2/p[0] vco_2/p[10] vco_2/p[1] vco_2/p[2] vco_2/p[3] vco_2/p[4] vco_2/p[5] analog_io[16]
 + vco_2/p[7] vco_2/p[8] vco_2/p[9] wb_rst_i vccd1 vssd1 vco_adc
-Xvco_0 vco_0/p[0] vco_0/p[1] vco_0/p[2] vco_0/p[3] vco_0/p[4] vco_0/p[5] analog_io[10]
-+ vco_0/p[7] vco_0/p[8] vco_0/p[9] vco_0/p[10] analog_io[9] vccd2 vssd2 vco_0/enb
-+ vco_r100
+Xvco_0 vco_0/p[9] vco_0/p[7] vco_0/p[5] vco_0/p[3] vco_0/p[1] vco_0/p[0] vco_0/p[2]
++ vco_0/p[4] analog_io[10] vco_0/p[8] vco_0/p[10] vco_0/enb analog_io[9] vccd2 vssd2
++ vco_w6_r100
 Xvco_1 vco_1/p[0] vco_1/p[1] vco_1/p[2] vco_1/p[3] vco_1/p[4] vco_1/p[5] analog_io[13]
 + vco_1/p[7] vco_1/p[8] vco_1/p[9] vco_1/p[10] analog_io[12] vccd2 vssd2 vco_1/enb
 + vco

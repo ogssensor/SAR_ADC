@@ -59,6 +59,7 @@ set ::env(EXTRA_LEFS) "\
         $script_dir/../../lef/${SRAM_MODEL_NAME}.lef \
         $script_dir/../../lef/vco_adc.lef \
         $script_dir/../../lef/vco_r100.lef \
+        $script_dir/../../lef/vco_w6_r100.lef \
         $script_dir/../../lef/vco.lef"
 #        $script_dir/../../lef/vco.lef"
 #        $script_dir/../../lef/vco_r100.lef
@@ -69,6 +70,7 @@ set ::env(EXTRA_GDS_FILES) "\
         $script_dir/../../gds/${SRAM_MODEL_NAME}.gds \
         $script_dir/../../gds/vco_adc.gds \
         $script_dir/../../gds/vco_r100.gds \
+        $script_dir/../../gds/vco_w6_r100.gds \
         $script_dir/../../gds/vco.gds"
 #        $script_dir/../../gds/vco.gds"
 #        $script_dir/../../gds/vco_w6_r100.gds
