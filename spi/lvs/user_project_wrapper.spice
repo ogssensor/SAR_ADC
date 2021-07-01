@@ -373,8 +373,8 @@ Xvco_adc_1 wb_clk_i vco_adc_1/data_out[0] vco_adc_1/data_out[10] vco_adc_1/data_
 + vco_adc_2/oversample_in[1] vco_adc_2/oversample_in[2] vco_adc_2/oversample_in[3]
 + vco_adc_2/oversample_in[4] vco_adc_2/oversample_in[5] vco_adc_2/oversample_in[6]
 + vco_adc_2/oversample_in[7] vco_adc_2/oversample_in[8] vco_adc_2/oversample_in[9]
-+ vco_1/p[0] vco_1/p[10] vco_1/p[1] vco_1/p[2] vco_1/p[3] vco_1/p[4] vco_1/p[5] analog_io[13]
-+ vco_1/p[7] vco_1/p[8] vco_1/p[9] wb_rst_i vccd1 vssd1 vco_adc
++ vco_1/p[0] vco_1/p[10] vco_1/p[1] vco_1/p[2] vco_1/p[3] vco_1/p[4] vco_1/p[5] vco_1/p[6]
++ vco_1/p[7] analog_io[12] vco_1/p[9] wb_rst_i vccd1 vssd1 vco_adc
 Xvco_adc_2 wb_clk_i vco_adc_2/data_out[0] vco_adc_2/data_out[10] vco_adc_2/data_out[11]
 + vco_adc_2/data_out[12] vco_adc_2/data_out[13] vco_adc_2/data_out[14] vco_adc_2/data_out[15]
 + vco_adc_2/data_out[16] vco_adc_2/data_out[17] vco_adc_2/data_out[18] vco_adc_2/data_out[19]
@@ -392,8 +392,8 @@ Xvco_adc_2 wb_clk_i vco_adc_2/data_out[0] vco_adc_2/data_out[10] vco_adc_2/data_
 Xvco_0 vco_0/p[9] vco_0/p[7] vco_0/p[5] vco_0/p[3] vco_0/p[1] vco_0/p[0] vco_0/p[2]
 + vco_0/p[4] analog_io[10] vco_0/p[8] vco_0/p[10] vco_0/enb analog_io[9] vccd2 vssd2
 + vco_w6_r100
-Xvco_1 vco_1/p[0] vco_1/p[1] vco_1/p[2] vco_1/p[3] vco_1/p[4] vco_1/p[5] analog_io[13]
-+ vco_1/p[7] vco_1/p[8] vco_1/p[9] vco_1/p[10] analog_io[12] vccd2 vssd2 vco_1/enb
+Xvco_1 vco_1/p[0] vco_1/p[1] vco_1/p[2] vco_1/p[3] vco_1/p[4] vco_1/p[5] vco_1/p[6]
++ vco_1/p[7] analog_io[12] vco_1/p[9] vco_1/p[10] analog_io[13] vccd2 vssd2 vco_1/enb
 + vco
 Xvco_2 vco_2/p[0] vco_2/p[1] vco_2/p[2] vco_2/p[3] vco_2/p[4] vco_2/p[5] analog_io[16]
 + vco_2/p[7] vco_2/p[8] vco_2/p[9] vco_2/p[10] analog_io[15] vccd2 vssd2 vco_2/enb

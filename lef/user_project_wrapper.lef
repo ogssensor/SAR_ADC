@@ -5668,7 +5668,7 @@ MACRO user_project_wrapper
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 1359.020 -9.320 1362.020 3529.000 ;
+        RECT 1359.020 3470.760 1362.020 3529.000 ;
     END
   END vssd1
   PIN vssd1
@@ -5676,7 +5676,7 @@ MACRO user_project_wrapper
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 1179.020 3470.760 1182.020 3529.000 ;
+        RECT 1179.020 -9.320 1182.020 3529.000 ;
     END
   END vssd1
   PIN vssd1
@@ -5748,7 +5748,7 @@ MACRO user_project_wrapper
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 1179.020 -9.320 1182.020 3346.240 ;
+        RECT 1359.020 -9.320 1362.020 3346.240 ;
     END
   END vssd1
   PIN vssd1
@@ -6644,7 +6644,7 @@ MACRO user_project_wrapper
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 1377.020 -18.720 1380.020 3538.400 ;
+        RECT 1377.020 3471.000 1380.020 3538.400 ;
     END
   END vssd2
   PIN vssd2
@@ -6717,6 +6717,14 @@ MACRO user_project_wrapper
     PORT
       LAYER met4 ;
         RECT 2277.020 1900.000 2280.020 3346.000 ;
+    END
+  END vssd2
+  PIN vssd2
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met4 ;
+        RECT 1377.020 -18.720 1380.020 3346.000 ;
     END
   END vssd2
   PIN vssd2
@@ -7604,7 +7612,7 @@ MACRO user_project_wrapper
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 1395.020 -28.120 1398.020 3547.800 ;
+        RECT 1395.020 3471.000 1398.020 3547.800 ;
     END
   END vssa1
   PIN vssa1
@@ -7677,6 +7685,14 @@ MACRO user_project_wrapper
     PORT
       LAYER met4 ;
         RECT 2295.020 1900.000 2298.020 3346.000 ;
+    END
+  END vssa1
+  PIN vssa1
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met4 ;
+        RECT 1395.020 -28.120 1398.020 3346.000 ;
     END
   END vssa1
   PIN vssa1
@@ -8977,7 +8993,7 @@ MACRO user_project_wrapper
   END vssa2
   OBS
       LAYER li1 ;
-        RECT 242.565 12.665 2654.040 3500.215 ;
+        RECT 249.925 12.665 2654.040 3500.215 ;
       LAYER met1 ;
         RECT 2.830 10.640 2917.250 3509.040 ;
       LAYER met2 ;
@@ -9897,8 +9913,8 @@ MACRO user_project_wrapper
         RECT 1092.420 96.735 1106.620 3461.000 ;
         RECT 1110.420 96.735 1124.620 3461.000 ;
         RECT 1128.420 96.735 1142.620 3461.000 ;
-        RECT 1146.420 3346.640 1358.620 3461.000 ;
-        RECT 1146.420 96.735 1178.620 3346.640 ;
+        RECT 1146.420 96.735 1178.620 3461.000 ;
+        RECT 1182.420 3346.640 1412.620 3461.000 ;
         RECT 1182.420 3346.400 1268.620 3346.640 ;
         RECT 1182.420 96.735 1196.620 3346.400 ;
         RECT 1200.420 96.735 1214.620 3346.400 ;
@@ -9909,9 +9925,10 @@ MACRO user_project_wrapper
         RECT 1290.420 96.735 1304.620 3346.400 ;
         RECT 1308.420 96.735 1322.620 3346.400 ;
         RECT 1326.420 96.735 1358.620 3346.400 ;
-        RECT 1362.420 96.735 1376.620 3461.000 ;
-        RECT 1380.420 96.735 1394.620 3461.000 ;
-        RECT 1398.420 96.735 1412.620 3461.000 ;
+        RECT 1362.420 3346.400 1412.620 3346.640 ;
+        RECT 1362.420 96.735 1376.620 3346.400 ;
+        RECT 1380.420 96.735 1394.620 3346.400 ;
+        RECT 1398.420 96.735 1412.620 3346.400 ;
         RECT 1416.420 96.735 1448.620 3461.000 ;
         RECT 1452.420 96.735 1466.620 3461.000 ;
         RECT 1470.420 3230.600 1484.620 3461.000 ;

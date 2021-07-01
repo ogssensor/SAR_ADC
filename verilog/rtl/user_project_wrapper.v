@@ -261,7 +261,7 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[1]),
-	      .input_analog(analog_io[12]),
+	      .input_analog(analog_io[13]),
 	      .p(phase1));
    // assign analog_io[12] = a_w[1];
 
@@ -286,7 +286,7 @@ module user_project_wrapper #(
 	      .input_analog(analog_io[15]),
 	      .p(phase2));
    // assign analog_io[15] = a_w[2];
-   assign analog_io[13] = phase1[6];
+   assign analog_io[12] = phase1[8];
    assign analog_io[16] = phase2[6];
    assign analog_io[10] = phase0[6];
 endmodule	// user_project_wrapper
