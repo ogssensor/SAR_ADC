@@ -135,7 +135,7 @@ module user_project_wrapper #(
 
 	   // IO Pads
 
-	   .io_in (io_in),
+	   //.io_in (io_in),
 	   .io_out(io_out),
 	   .io_oeb(io_oeb),
 	   // IRQ
@@ -240,7 +240,7 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[0]),
-	      .input_analog(analog_io[9]),
+	      .input_analog(analog_io[10]),
 	      .p(phase0));
    // assign analog_io[9] = a_w[0];
 
@@ -288,7 +288,7 @@ module user_project_wrapper #(
    // assign analog_io[15] = a_w[2];
    assign analog_io[12] = phase1[8];
    assign analog_io[16] = phase2[6];
-   assign analog_io[10] = phase0[6];
+   assign analog_io[11] = phase0[2];
 endmodule	// user_project_wrapper
 
 `default_nettype wire

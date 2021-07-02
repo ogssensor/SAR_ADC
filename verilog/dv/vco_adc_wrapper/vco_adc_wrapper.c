@@ -119,9 +119,9 @@ void main()
     reg_mprj_io_25 = GPIO_MODE_MGMT_STD_OUTPUT;
     reg_mprj_io_24 = GPIO_MODE_MGMT_STD_OUTPUT;
 
-    // analog_io 9-10
-    reg_mprj_io_16 = GPIO_MODE_USER_STD_ANALOG;
+    // analog_io 10-11
     reg_mprj_io_17 = GPIO_MODE_USER_STD_ANALOG;
+    reg_mprj_io_18 = GPIO_MODE_USER_STD_ANALOG;
     // analog_io 12-13
     reg_mprj_io_20 = GPIO_MODE_USER_STD_ANALOG;
     reg_mprj_io_19 = GPIO_MODE_USER_STD_ANALOG;

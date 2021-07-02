@@ -95,7 +95,7 @@ set ::env(CLOCK_TREE_SYNTH) 0
 ## temporary disable klayout XOR check because of a large number of viols
 set ::env(RUN_KLAYOUT_XOR) 0
 # set ::env(GLB_RT_OBS) "met1 931 1604 993 1606, met1 1166.24 3386.71 1346.32 3429.70, met4 486.0 904.0 487.2 904.6"
-set ::env(GLB_RT_OBS) "met4 486.975 904.22 487.305 904.225, met4 303.895 904.22 304.225 904.225"
+set ::env(GLB_RT_OBS) "met4 486.975 904.22 487.305 904.225, met4 303.895 904.22 304.225 904.225, met1 255.135 904.220 255.465 904.225, met4 255.135 904.220 255.465 904.225, met4 2113.68 3392.9 2222.4 3425.0, met1 2113.68 3392.9 2222.4 3425.0"
 ## This needs a patch to openlane
 set ::env(USE_SRAM_ABSTRACT) 1
 ## this needs a pdk build with the sram macros
