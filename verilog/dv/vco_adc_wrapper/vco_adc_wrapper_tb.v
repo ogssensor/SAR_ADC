@@ -40,8 +40,8 @@ module vco_adc_wrapper_tb;
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_0);
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_1);
       // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj.vco_2);
-      // $dumpvars(0, vco_adc_wrapper_tb.uut.mprj);
-      $dumpvars(0, vco_adc_wrapper_tb.uut);
+      $dumpvars(0, vco_adc_wrapper_tb.uut.mprj);
+      // $dumpvars(0, vco_adc_wrapper_tb.uut);
 
       repeat (200) begin
       // repeat (5) begin

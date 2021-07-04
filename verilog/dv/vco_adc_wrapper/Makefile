@@ -68,6 +68,7 @@ endif
 # ---- Clean ----
 
 clean:
-	rm -f *.elf *.hex *.bin *.vvp *.vcd *.log
-
-.PHONY: clean hex all
+	rm -f *.elf *.hex *.bin *.vvp *.vcd *.log wb_*.txt
+check:
+	awk '{print $$2}' wb_write_data.txt > write.txt && awk '{print $$2}' wb_read_data.txt > read.txt && diff -u write.txt read.txt
+.PHONY: clean hex all check
