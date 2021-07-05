@@ -139,7 +139,7 @@ module user_project_wrapper #(
 	   .io_out(io_out),
 	   .io_oeb(io_oeb),
 	   // IRQ
-	   .irq(user_irq),
+	   //.irq(user_irq),
            .mem_renb_o(renb),
            .mem_raddr_o(raddr),
            .mem_wenb_o(wenb),

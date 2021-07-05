@@ -81,7 +81,7 @@ module vco_adc_wrapper #(
     output [`MPRJ_IO_PADS-1:0] io_oeb,
 
     // IRQ
-    output [2:0] irq,
+    //output [2:0] irq,
   // memory interface
   output [1:0] mem_renb_o,
   output [MEM_ADDR_W-1:0] mem_raddr_o,
@@ -104,6 +104,7 @@ module vco_adc_wrapper #(
    // localparam MAX_SIZE=2048;
    // localparam MEMSIZE = 1024;
    localparam MEMSIZE = 512;
+
    reg [9:0] oversample_reg;
    reg [2:0] ena_reg;
    reg [1:0] adc_sel_reg;
@@ -323,7 +324,7 @@ module vco_adc_wrapper #(
       if (empty_1d_reg && adc_dvalid_1d_reg && (!full_reg))
 	mem_rdata_reg <= adc_out;
       else if (ren_3d_reg == 1'b1)
-	mem_rdata_reg <= (rptr_reg < MEMSIZE) ? mem_data_i : mem1_data_i;
+	mem_rdata_reg <= (rptr_reg[MEM_ADDR_W] == 1'b0) ? mem_data_i : mem1_data_i;
    end // always @ (posedge wb_clk_i)
 
    always @(posedge wb_clk_i) begin
@@ -339,13 +340,13 @@ module vco_adc_wrapper #(
       end
    end
    
-   assign mem_waddr_o = wptr_reg[9:0];
-   assign mem_raddr_o = rptr_reg[9:0];
-   assign mem_renb[0] = (rptr_reg < MEMSIZE) ? ~ren_1d_reg : 1'b1;
-   assign mem_renb[1] = (rptr_reg >= MEMSIZE) ? ~ren_1d_reg : 1'b1;
+   assign mem_waddr_o = wptr_reg[MEM_ADDR_W-1:0];
+   assign mem_raddr_o = rptr_reg[MEM_ADDR_W-1:0];
+   assign mem_renb[0] = (rptr_reg[MEM_ADDR_W] == 1'b0) ? ~ren_1d_reg : 1'b1;
+   assign mem_renb[1] = (rptr_reg[MEM_ADDR_W] == 1'b1) ? ~ren_1d_reg : 1'b1;
    assign mem_renb_o = mem_renb_reg;
-   assign mem_wenb[0] = (wptr_reg < MEMSIZE) ? ~mem_write : 1'b1;
-   assign mem_wenb[1] = (wptr_reg >= MEMSIZE) ? ~mem_write : 1'b1;
+   assign mem_wenb[0] = (wptr_reg[MEM_ADDR_W] == 1'b0) ? ~mem_write : 1'b1;
+   assign mem_wenb[1] = (wptr_reg[MEM_ADDR_W] == 1'b1) ? ~mem_write : 1'b1;
    assign mem_wenb_o = mem_wenb_reg;
    assign mem_data_o = mem_wdata_reg;
    assign fifo_out_w = mem_rdata_reg;
@@ -353,7 +354,7 @@ module vco_adc_wrapper #(
    // IO
    assign io_out    = fifo_out_w;
    assign io_oeb = {(`MPRJ_IO_PADS-1){~io_en_reg}};
-   assign irq  = 3'b000;
+   //assign irq  = 3'b000;
    assign wbs_dat_o = data_o;
    assign vco_enb_o = ~vco_en_reg;
    assign wmask_o = 4'hF;
