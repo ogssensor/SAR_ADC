@@ -119,13 +119,15 @@ module vco_adc_wrapper #(
    reg [31:0] 	 mem_wdata_reg;
    reg [1:0] 	 mem_wenb_reg;
    wire [1:0] 	 mem_wenb;
+   wire [1:0] 	 mem_renb;
+   reg [1:0] 	 mem_renb_reg;
    reg 		 full_reg;
    reg 		 full_1d_reg;
    reg 		 empty_reg;
    reg 		 empty_1d_reg;
    reg 		 clear_wptr_reg;
    reg 		 clear_rptr_reg;
-   reg 		 ren_1d_reg;
+   reg 		 ren_1d_reg, ren_2d_reg, ren_3d_reg;
    reg [2:0] 	 vco_en_reg;
    reg [10:0] 	 num_samples_reg;
    reg 		 adc_dvalid_1d_reg, adc_dvalid_2d_reg;
@@ -295,7 +297,7 @@ module vco_adc_wrapper #(
 	    wptr_reg <= 0;
 	 end
 
-	 if (!empty_reg && mem_read) begin
+	 if (!empty_reg && ren_reg) begin
 	    rptr_reg <= rptr_reg + 1;
 	 end else if (clear_rptr_reg) begin
 	    rptr_reg <= 0;
@@ -307,34 +309,41 @@ module vco_adc_wrapper #(
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
 	 ren_1d_reg <= 1'b0;
+	 ren_2d_reg <= 1'b0;
+	 ren_3d_reg <= 1'b0;
 	 ren_reg <= 1'b0;
       end
       else begin
 	 ren_reg <= mem_read;
 	 ren_1d_reg <= ren_reg;
+	 ren_2d_reg <= ren_1d_reg;
+	 ren_3d_reg <= ren_2d_reg;
       end
 
       if (empty_1d_reg && adc_dvalid_1d_reg && (!full_reg))
 	mem_rdata_reg <= adc_out;
-      else if (ren_1d_reg == 1'b1)
+      else if (ren_3d_reg == 1'b1)
 	mem_rdata_reg <= (rptr_reg < MEMSIZE) ? mem_data_i : mem1_data_i;
    end // always @ (posedge wb_clk_i)
 
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
 	 mem_wenb_reg <= 2'b11;
+	 mem_renb_reg <= 2'b11;
 	 mem_wdata_reg <= 0;
       end
       else begin
 	 mem_wenb_reg <= mem_wenb;
+	 mem_renb_reg <= mem_renb;
 	 mem_wdata_reg <= adc_out;
       end
    end
    
    assign mem_waddr_o = wptr_reg[9:0];
    assign mem_raddr_o = rptr_reg[9:0];
-   assign mem_renb_o[0] = (rptr_reg < MEMSIZE) ? ~ren_reg : 1'b1;
-   assign mem_renb_o[1] = (rptr_reg >= MEMSIZE) ? ~ren_reg : 1'b1;
+   assign mem_renb[0] = (rptr_reg < MEMSIZE) ? ~ren_1d_reg : 1'b1;
+   assign mem_renb[1] = (rptr_reg >= MEMSIZE) ? ~ren_1d_reg : 1'b1;
+   assign mem_renb_o = mem_renb_reg;
    assign mem_wenb[0] = (wptr_reg < MEMSIZE) ? ~mem_write : 1'b1;
    assign mem_wenb[1] = (wptr_reg >= MEMSIZE) ? ~mem_write : 1'b1;
    assign mem_wenb_o = mem_wenb_reg;
@@ -367,11 +376,11 @@ module vco_adc_wrapper #(
    always @(posedge wb_clk_i) begin
       if ((!mem_wenb_o[0]) || (!mem_wenb_o[1])) begin
 	 $display("Mem write: addr: %04X %08X", wptr_reg, mem_data_o);
-	 $fwrite(rdat_file, "%04X %08X\n", wptr_reg, mem_data_o);
+	 $fwrite(wdat_file, "%04X %08X\n", wptr_reg, mem_data_o);
       end
       if (wbs_ack_o && wbs_adr_i == 32'h30000004) begin
 	 $display("Interface read: addr: %08X %08X", rptr_reg, wbs_dat_o);
-	 $fwrite(wdat_file, "%04X %08X\n", rptr_reg, mem_rdata_reg);
+	 $fwrite(rdat_file, "%04X %08X\n", rptr_reg, mem_rdata_reg);
       end
       
    end
