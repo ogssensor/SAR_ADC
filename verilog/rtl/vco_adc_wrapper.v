@@ -103,7 +103,6 @@ module vco_adc_wrapper #(
 
    // localparam MAX_SIZE=2048;
    // localparam MEMSIZE = 1024;
-   localparam MEMSIZE = 512;
 
    reg [9:0] oversample_reg;
    reg [2:0] ena_reg;
@@ -133,6 +132,8 @@ module vco_adc_wrapper #(
    reg [10:0] 	 num_samples_reg;
    reg 		 adc_dvalid_1d_reg, adc_dvalid_2d_reg;
    reg 		 io_en_reg;
+   reg 		 first_read_reg;
+   reg 		 first_read_1d_reg;
 
    reg [BITS-1:0] 	  adc_out;
    reg 			  adc_dvalid_tmp;
@@ -221,7 +222,7 @@ module vco_adc_wrapper #(
 	 clear_wptr_reg		<= 1'b0;
 	 clear_rptr_reg		<= 1'b0;
 	 vco_en_reg		<= 3'h0;
-	 num_samples_reg	<= MEMSIZE-1;
+	 num_samples_reg	<= 1024;
 	 adc_sel_reg		<= 2'h0;
 	 io_en_reg		<= 1'b0;
       end else begin
@@ -262,6 +263,18 @@ module vco_adc_wrapper #(
 	 adc_dvalid_2d_reg <= adc_dvalid_1d_reg;
       end
    end
+   always @(posedge wb_clk_i) begin
+      if (rst == 1'b1) begin
+	 first_read_reg <= 1'b0;
+      end
+      else if (!empty_reg && empty_1d_reg) begin
+	 first_read_reg <= 1'b1;
+      end
+      else begin
+	first_read_reg <= 1'b0;
+      end
+      first_read_1d_reg <= first_read_reg;
+   end
 
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
@@ -280,7 +293,7 @@ module vco_adc_wrapper #(
 	 if (adc_dvalid_2d_reg) full_1d_reg <= full_reg;
 	 else if (clear_wptr_reg) full_1d_reg <= 1'b0;
 
-	 if (adc_dvalid) empty_1d_reg <= empty_reg;
+	 empty_1d_reg <= empty_reg;
 
       end
    end // always @ (posedge wb_clk_i)
@@ -298,7 +311,7 @@ module vco_adc_wrapper #(
 	    wptr_reg <= 0;
 	 end
 
-	 if (!empty_reg && ren_reg) begin
+	 if (!empty_reg && ren_reg && !first_read_1d_reg) begin
 	    rptr_reg <= rptr_reg + 1;
 	 end else if (clear_rptr_reg) begin
 	    rptr_reg <= 0;
@@ -315,15 +328,18 @@ module vco_adc_wrapper #(
 	 ren_reg <= 1'b0;
       end
       else begin
-	 ren_reg <= mem_read;
+	 if (first_read_reg) begin
+	    ren_reg <= 1'b1;
+	 end
+	 else begin
+	    ren_reg <= mem_read;
+	 end
 	 ren_1d_reg <= ren_reg;
 	 ren_2d_reg <= ren_1d_reg;
 	 ren_3d_reg <= ren_2d_reg;
       end
 
-      if (empty_1d_reg && adc_dvalid_1d_reg && (!full_reg))
-	mem_rdata_reg <= adc_out;
-      else if (ren_3d_reg == 1'b1)
+      if (ren_3d_reg == 1'b1)
 	mem_rdata_reg <= (rptr_reg[MEM_ADDR_W] == 1'b0) ? mem_data_i : mem1_data_i;
    end // always @ (posedge wb_clk_i)
 

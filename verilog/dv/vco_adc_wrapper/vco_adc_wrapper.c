@@ -143,6 +143,12 @@ void main()
     // read until empty
     for (int i = 0; i < 1024; ++i)
       vco_data[0] = reg_mprj_vco_adc;
+    // reread the data memory
+    //reg_mprj_slave = CLEAR_RPTR | NUM_SAMPLES(32) | OVERSAMPLE(4);
+    //reg_mprj_slave = NUM_SAMPLES(32) | OVERSAMPLE(4);
+    //for (int i = 0; i < 32; ++i)
+    //  vco_data[0] = reg_mprj_vco_adc;
+
     /*
     // reset wptr & rptr
     reg_mprj_slave = (1<< 30) | (1 << 29) | (1 << 26) | 255;
