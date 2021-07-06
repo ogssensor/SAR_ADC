@@ -83,14 +83,17 @@ module vco_adc_wrapper #(
     // IRQ
     //output [2:0] irq,
   // memory interface
-  output [1:0] mem_renb_o,
+  output [3:0] mem_renb_o,
   output [MEM_ADDR_W-1:0] mem_raddr_o,
-  output [1:0] mem_wenb_o,
+  output [3:0] mem_wenb_o,
   output [MEM_ADDR_W-1:0] mem_waddr_o,
   output [31:0] mem_data_o,
-  input [31:0] mem_data_i,
+  input [31:0] mem0_data_i,
   input [31:0] mem1_data_i,
+  input [31:0] mem2_data_i,
+  input [31:0] mem3_data_i,
   output [3:0] wmask_o,
+
   output [9:0] oversample_o,
   output [2:0] sinc3_en_o,
   // output [1:0] adc_sel_o,
@@ -109,18 +112,18 @@ module vco_adc_wrapper #(
    reg [1:0] adc_sel_reg;
    reg 	     wbs_ack_reg;
 
-   reg [MEM_ADDR_W:0] wptr_reg;
-   reg [MEM_ADDR_W:0] rptr_reg;
+   reg [MEM_ADDR_W+1:0] wptr_reg;
+   reg [MEM_ADDR_W+1:0] rptr_reg;
 
    reg [1:0] 	 status_reg;
    reg [31:0] 	 num_data_reg;
    reg [31:0] 	 data_o;
    reg [31:0] 	 mem_rdata_reg;
    reg [31:0] 	 mem_wdata_reg;
-   reg [1:0] 	 mem_wenb_reg;
-   wire [1:0] 	 mem_wenb;
-   wire [1:0] 	 mem_renb;
-   reg [1:0] 	 mem_renb_reg;
+   reg [3:0] 	 mem_wenb_reg;
+   reg [3:0] 	 mem_wenb;
+   reg [3:0] 	 mem_renb;
+   reg [3:0] 	 mem_renb_reg;
    reg 		 full_reg;
    reg 		 full_1d_reg;
    reg 		 empty_reg;
@@ -339,14 +342,21 @@ module vco_adc_wrapper #(
 	 ren_3d_reg <= ren_2d_reg;
       end
 
-      if (ren_3d_reg == 1'b1)
-	mem_rdata_reg <= (rptr_reg[MEM_ADDR_W] == 1'b0) ? mem_data_i : mem1_data_i;
+      if (ren_3d_reg == 1'b1) begin
+	 case(rptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+	   2'b00: mem_rdata_reg <= mem0_data_i;
+	   2'b01: mem_rdata_reg <= mem1_data_i;
+	   2'b10: mem_rdata_reg <= mem2_data_i;
+	   2'b11: mem_rdata_reg <= mem3_data_i;
+	   default: mem_rdata_reg <= mem0_data_i;
+	 endcase // case (rptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+      end
    end // always @ (posedge wb_clk_i)
 
    always @(posedge wb_clk_i) begin
       if (rst == 1'b1) begin
-	 mem_wenb_reg <= 2'b11;
-	 mem_renb_reg <= 2'b11;
+	 mem_wenb_reg <= 4'b1111;
+	 mem_renb_reg <= 4'b1111;
 	 mem_wdata_reg <= 0;
       end
       else begin
@@ -355,14 +365,27 @@ module vco_adc_wrapper #(
 	 mem_wdata_reg <= adc_out;
       end
    end
-   
+   always @(*) begin
+      case(rptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+	 2'b00: mem_renb <= {3'b111, ~ren_1d_reg};
+	 2'b01: mem_renb <= {2'b11, ~ren_1d_reg, 1'b1};
+	 2'b10: mem_renb <= {1'b1, ~ren_1d_reg, 2'b11};
+	 2'b11: mem_renb <= {~ren_1d_reg, 3'b111};
+	 default: mem_renb <= 4'b1111;
+      endcase // case (rptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+   end
+   always @(*) begin
+      case(wptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+	 2'b00: mem_wenb <= {3'b111, ~mem_write};
+	 2'b01: mem_wenb <= {2'b11, ~mem_write, 1'b1};
+	 2'b10: mem_wenb <= {1'b1, ~mem_write, 2'b11};
+	 2'b11: mem_wenb <= {~mem_write, 3'b111};
+	 default: mem_wenb <= 4'b1111;
+      endcase // case (rptr_reg[MEM_ADDR_W+1:MEM_ADDR_W])
+   end
    assign mem_waddr_o = wptr_reg[MEM_ADDR_W-1:0];
    assign mem_raddr_o = rptr_reg[MEM_ADDR_W-1:0];
-   assign mem_renb[0] = (rptr_reg[MEM_ADDR_W] == 1'b0) ? ~ren_1d_reg : 1'b1;
-   assign mem_renb[1] = (rptr_reg[MEM_ADDR_W] == 1'b1) ? ~ren_1d_reg : 1'b1;
    assign mem_renb_o = mem_renb_reg;
-   assign mem_wenb[0] = (wptr_reg[MEM_ADDR_W] == 1'b0) ? ~mem_write : 1'b1;
-   assign mem_wenb[1] = (wptr_reg[MEM_ADDR_W] == 1'b1) ? ~mem_write : 1'b1;
    assign mem_wenb_o = mem_wenb_reg;
    assign mem_data_o = mem_wdata_reg;
    assign fifo_out_w = mem_rdata_reg;
@@ -391,7 +414,7 @@ module vco_adc_wrapper #(
    end
 
    always @(posedge wb_clk_i) begin
-      if ((!mem_wenb_o[0]) || (!mem_wenb_o[1])) begin
+      if ((!mem_wenb_o[0]) || (!mem_wenb_o[1]) || (!mem_wenb_o[2]) || (!mem_wenb_o[3])) begin
 	 $display("Mem write: addr: %04X %08X", wptr_reg, mem_data_o);
 	 $fwrite(wdat_file, "%04X %08X\n", wptr_reg, mem_data_o);
       end

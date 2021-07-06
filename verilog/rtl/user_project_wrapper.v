@@ -80,15 +80,17 @@ module user_project_wrapper #(
    wire [10:0] 	 phase0, phase1, phase2;
    wire [31:0] 	 m2w_data0;
    wire [31:0] 	 m2w_data1;
+   wire [31:0] 	 m2w_data2;
+   wire [31:0] 	 m2w_data3;
    wire [31:0] 	 w2m_data;
    wire [8:0] 	 raddr;
    wire [8:0] 	 waddr;
    wire [3:0] 	 wmask;
-   wire [1:0]	 renb;
-   wire [1:0]	 wenb;
+   wire [3:0]	 renb;
+   wire [3:0]	 wenb;
    wire [2:0] 	 a_w;
    wire [2:0] 	 vco_enb;
-   wire [31:0] 	 m2w_data2, adc_out_0, adc_out_1, adc_out_2;
+   wire [31:0] 	 adc_out_0, adc_out_1, adc_out_2;
    reg [31:0] 	 adc_out;
    wire [9:0] 	 oversample;
    wire [2:0] 	 en;
@@ -145,8 +147,10 @@ module user_project_wrapper #(
            .mem_wenb_o(wenb),
            .mem_waddr_o(waddr),
            .mem_data_o(w2m_data),
-           .mem_data_i(m2w_data0),
+           .mem0_data_i(m2w_data0),
            .mem1_data_i(m2w_data1),
+           .mem2_data_i(m2w_data2),
+           .mem3_data_i(m2w_data3),
            .wmask_o(wmask),
            .oversample_o(oversample),
            .sinc3_en_o(en),
@@ -221,6 +225,46 @@ module user_project_wrapper #(
 	    .addr1(raddr),
 	    .dout1(m2w_data1)
   );
+   sky130_sram_2kbyte_1rw1r_32x512_8
+     mem_2 (
+`ifdef USE_POWER_PINS
+	    .vccd1(vccd1),
+	    .vssd1(vssd1),
+`endif
+// Port 0: RW
+	    .clk0(wb_clk_i),
+	    .csb0(wenb[2]),
+	    .web0(wenb[2]),
+	    .wmask0(wmask),
+	    .addr0(waddr),
+	    .din0(w2m_data),
+	    .dout0(),
+// Port 1: R
+	    .clk1(wb_clk_i),
+	    .csb1(renb[2]),
+	    .addr1(raddr),
+	    .dout1(m2w_data2)
+  );
+   sky130_sram_2kbyte_1rw1r_32x512_8
+     mem_3 (
+`ifdef USE_POWER_PINS
+	    .vccd1(vccd1),
+	    .vssd1(vssd1),
+`endif
+// Port 0: RW
+	    .clk0(wb_clk_i),
+	    .csb0(wenb[3]),
+	    .web0(wenb[3]),
+	    .wmask0(wmask),
+	    .addr0(waddr),
+	    .din0(w2m_data),
+	    .dout0(),
+// Port 1: R
+	    .clk1(wb_clk_i),
+	    .csb1(renb[3]),
+	    .addr1(raddr),
+	    .dout1(m2w_data3)
+  );
 
    vco_adc vco_adc_0
      (.clk(wb_clk_i)
@@ -240,7 +284,7 @@ module user_project_wrapper #(
 	      .vssd2(vssd2),
 `endif
 	      .enb(vco_enb[0]),
-	      .input_analog(analog_io[10]),
+	      .input_analog(analog_io[9]),
 	      .p(phase0));
    // assign analog_io[9] = a_w[0];
 
@@ -288,7 +332,7 @@ module user_project_wrapper #(
    // assign analog_io[15] = a_w[2];
    assign analog_io[12] = phase1[8];
    assign analog_io[16] = phase2[6];
-   assign analog_io[11] = phase0[2];
+   assign analog_io[10] = phase0[2];
 endmodule	// user_project_wrapper
 
 `default_nettype wire

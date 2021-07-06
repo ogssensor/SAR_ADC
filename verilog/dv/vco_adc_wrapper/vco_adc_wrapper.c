@@ -119,9 +119,9 @@ void main()
     reg_mprj_io_25 = GPIO_MODE_MGMT_STD_OUTPUT;
     reg_mprj_io_24 = GPIO_MODE_MGMT_STD_OUTPUT;
 
-    // analog_io 10-11
+    // analog_io 9-10
+    reg_mprj_io_16 = GPIO_MODE_USER_STD_ANALOG;
     reg_mprj_io_17 = GPIO_MODE_USER_STD_ANALOG;
-    reg_mprj_io_18 = GPIO_MODE_USER_STD_ANALOG;
     // analog_io 12-13
     reg_mprj_io_20 = GPIO_MODE_USER_STD_ANALOG;
     reg_mprj_io_19 = GPIO_MODE_USER_STD_ANALOG;
@@ -138,15 +138,15 @@ void main()
     // Flag start of the test
     reg_mprj_datal = 0xB4000000;
 
-    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(1024) | OVERSAMPLE(4);
+    reg_mprj_slave = VCO_ADC0_EN | NUM_SAMPLES(2048) | OVERSAMPLE(16);
     while(((reg_mprj_status >> 1) & 0x1) == 0);
     // read until empty
-    for (int i = 0; i < 1024; ++i)
+    for (int i = 0; i < 2048; ++i)
       vco_data[0] = reg_mprj_vco_adc;
     // reread the data memory
-    //reg_mprj_slave = CLEAR_RPTR | NUM_SAMPLES(32) | OVERSAMPLE(4);
-    //reg_mprj_slave = NUM_SAMPLES(32) | OVERSAMPLE(4);
-    //for (int i = 0; i < 32; ++i)
+    //reg_mprj_slave = CLEAR_RPTR | NUM_SAMPLES(64) | OVERSAMPLE(16);
+    //reg_mprj_slave = NUM_SAMPLES(64) | OVERSAMPLE(16);
+    //for (int i = 0; i < 64; ++i)
     //  vco_data[0] = reg_mprj_vco_adc;
 
     /*

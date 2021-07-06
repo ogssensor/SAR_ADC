@@ -96,12 +96,12 @@ set ::env(CLOCK_TREE_SYNTH) 0
 set ::env(RUN_KLAYOUT_XOR) 0
 # set ::env(GLB_RT_OBS) "met1 931 1604 993 1606, met1 1166.24 3386.71 1346.32 3429.70, met4 486.0 904.0 487.2 904.6"
 # set ::env(GLB_RT_OBS) "met4 486.975 904.22 487.305 904.225, met4 303.895 904.22 304.225 904.225, met1 255.135 904.220 255.465 904.225, met4 255.135 904.220 255.465 904.225, met4 2113.68 3392.9 2222.4 3425.0, met1 2113.68 3392.9 2222.4 3425.0"
-set ::env(GLB_RT_OBS) "met4 1303.8 1292.4 2196.0 1887.0"
-set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2113.4 3392.8 2225.3 3426.2"
-set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 1200.8 3387.0 1380.3 3329.0"
-set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 424.8 3387.0 603.9 3249.5"
+#set ::env(GLB_RT_OBS) "met4 1303.8 1292.4 2196.0 1887.0"
+#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2113.4 3392.8 2225.3 3426.2"
+#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 1200.8 3387.0 1380.3 3329.0"
+#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 424.8 3387.0 603.9 3249.5"
 ## block the routing over/near the SRAM 1
-set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2500 1603.8 933.1 1604.4"
+#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2500 1603.8 933.1 1604.4"
 ## This needs a patch to openlane
 set ::env(USE_SRAM_ABSTRACT) 1
 ## this needs a pdk build with the sram macros
