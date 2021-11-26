@@ -15,9 +15,14 @@
 
 # Base Configurations. Don't Touch
 # section begin
-set script_dir [file dirname [file normalize [info script]]]
 
-source $script_dir/../../caravel/openlane/user_project_wrapper_empty/fixed_wrapper_cfgs.tcl
+# YOU ARE NOT ALLOWED TO CHANGE ANY VARIABLES DEFINED IN THE FIXED WRAPPER CFGS 
+source $::env(CARAVEL_ROOT)/openlane/user_project_wrapper_empty/fixed_wrapper_cfgs.tcl
+
+# YOU CAN CHANGE ANY VARIABLES DEFINED IN THE DEFAULT WRAPPER CFGS BY OVERRIDING THEM IN THIS CONFIG.TCL
+source $::env(CARAVEL_ROOT)/openlane/user_project_wrapper_empty/default_wrapper_cfgs.tcl
+
+set script_dir [file dirname [file normalize [info script]]]
 
 set ::env(DESIGN_NAME) user_project_wrapper
 #section end
@@ -26,7 +31,7 @@ set ::env(DESIGN_NAME) user_project_wrapper
 
 ## Source Verilog Files
 set ::env(VERILOG_FILES) "\
-	$script_dir/../../caravel/verilog/rtl/defines.v \
+	$::env(CARAVEL_ROOT)/verilog/rtl/defines.v \
 	$script_dir/../../verilog/rtl/user_project_wrapper.v"
 
 ## Clock configurations
@@ -36,14 +41,18 @@ set ::env(CLOCK_NET) $::env(CLOCK_PORT)
 set ::env(CLOCK_PERIOD) "10"
 
 ## Internal Macros
+### Macro PDN Connections
+set ::env(FP_PDN_MACRO_HOOKS) "vco_adc_wrapper_1 vccd1 vssd1, vco_0 vccd2 vssd2, vco_1 vccd2 vssd2, vco_2 vccd2 vssd2"
+set ::env(FP_PDN_ENABLE_MACROS_GRID) 1
 ### Macro Placement
 set ::env(MACRO_PLACEMENT_CFG) $script_dir/macro.cfg
 set SRAM_MODEL_NAME "sky130_sram_2kbyte_1rw1r_32x512_8"
+
 ### Black-box verilog and views
 set ::env(VERILOG_FILES_BLACKBOX) "\
-	$script_dir/../../caravel/verilog/rtl/defines.v \
+	$::env(CARAVEL_ROOT)/verilog/rtl/defines.v \
+        $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/verilog/${SRAM_MODEL_NAME}.v \
 	$script_dir/../../verilog/rtl/vco_adc_wrapper.v \
-        $script_dir/../../verilog/rtl/${SRAM_MODEL_NAME}.v \
         $script_dir/../../verilog/rtl/vco_adc.v \
         $script_dir/../../verilog/rtl/vco_r100.v \
         $script_dir/../../verilog/rtl/vco_w6_r100.v \
@@ -56,7 +65,7 @@ set ::env(VERILOG_FILES_BLACKBOX) "\
 #         $script_dir/../../lef/vco.lef"
 set ::env(EXTRA_LEFS) "\
 	$script_dir/../../lef/vco_adc_wrapper.lef \
-        $script_dir/../../lef/${SRAM_MODEL_NAME}.lef \
+        $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/lef/${SRAM_MODEL_NAME}.lef \
         $script_dir/../../lef/vco_adc.lef \
         $script_dir/../../lef/vco_r100.lef \
         $script_dir/../../lef/vco_w6_r100.lef \
@@ -67,7 +76,7 @@ set ::env(EXTRA_LEFS) "\
 
 set ::env(EXTRA_GDS_FILES) "\
 	$script_dir/../../gds/vco_adc_wrapper.gds \
-        $script_dir/../../gds/${SRAM_MODEL_NAME}.gds \
+        $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/gds/${SRAM_MODEL_NAME}.gds \
         $script_dir/../../gds/vco_adc.gds \
         $script_dir/../../gds/vco_r100.gds \
         $script_dir/../../gds/vco_w6_r100.gds \
@@ -77,7 +86,13 @@ set ::env(EXTRA_GDS_FILES) "\
 
 set ::env(GLB_RT_MAXLAYER) 5
 
+# disable pdn check nodes becuase it hangs with multiple power domains.
+# any issue with pdn connections will be flagged with LVS so it is not a critical check.
 set ::env(FP_PDN_CHECK_NODES) 0
+
+set ::env(VDD_NETS) [list {vccd1} {vccd2} {vdda1} {vdda2}]
+set ::env(GND_NETS) [list {vssd1} {vssd2} {vssa1} {vssa2}]
+set ::env(SYNTH_USE_PG_PINS_DEFINES) "USE_POWER_PINS"
 
 # The following is because there are no std cells in the example wrapper project.
 set ::env(SYNTH_TOP_LEVEL) 1
@@ -88,24 +103,22 @@ set ::env(PL_RESIZER_TIMING_OPTIMIZATIONS) 0
 set ::env(PL_RESIZER_BUFFER_INPUT_PORTS) 0
 set ::env(PL_RESIZER_BUFFER_OUTPUT_PORTS) 0
 
+set ::env(FP_PDN_ENABLE_RAILS) 0
+
 set ::env(DIODE_INSERTION_STRATEGY) 0
 set ::env(FILL_INSERTION) 0
 set ::env(TAP_DECAP_INSERTION) 0
 set ::env(CLOCK_TREE_SYNTH) 0
-## temporary disable klayout XOR check because of a large number of viols
+
+## disable klayout xor
 set ::env(RUN_KLAYOUT_XOR) 0
-# set ::env(GLB_RT_OBS) "met1 931 1604 993 1606, met1 1166.24 3386.71 1346.32 3429.70, met4 486.0 904.0 487.2 904.6"
-# set ::env(GLB_RT_OBS) "met4 486.975 904.22 487.305 904.225, met4 303.895 904.22 304.225 904.225, met1 255.135 904.220 255.465 904.225, met4 255.135 904.220 255.465 904.225, met4 2113.68 3392.9 2222.4 3425.0, met1 2113.68 3392.9 2222.4 3425.0"
-#set ::env(GLB_RT_OBS) "met4 1303.8 1292.4 2196.0 1887.0"
-#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2113.4 3392.8 2225.3 3426.2"
-#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 1200.8 3387.0 1380.3 3329.0"
-#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 424.8 3387.0 603.9 3249.5"
-## block the routing over/near the SRAM 1
-#set ::env(GLB_RT_OBS) "$::env(GLB_RT_OBS), met1 2500 1603.8 933.1 1604.4"
 ## This needs a patch to openlane
 set ::env(USE_SRAM_ABSTRACT) 1
 ## this needs a pdk build with the sram macros
-set ::env(SRAM_ABSTRACT_MODEL) ${SRAM_MODEL_NAME}.mag
-
-# set ::env(PL_TARGET_DENSITY) 0.05
-# set ::env(PL_SKIP_INITIAL_PLACEMENT) 1
+set ::env(SRAM_ABSTRACT_MODEL) $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/${SRAM_MODEL_NAME}.mag
+set ::env(MAGIC_DRC_USE_GDS) 1
+set ::env(GLB_RT_OBS) "met3 100 1612 783 2028.5, \
+    		       met3 100 1020 783.1 1436.5, \
+		       met3 900 1612 1583 2028.5, \
+		       met3 900 1020 1583 1426.5, \
+		       met1 100.340 1304.000 100.405 1304.140"

@@ -32,6 +32,7 @@ set ::env(DIE_AREA) "0 0 700 700"
 set ::env(DESIGN_IS_CORE) 0
 # set ::env(GLB_RT_ADJUSTMENT) 0.21
 # set ::env(GLB_RT_ALLOW_CONGESTION) 1
+set ::env(CTS_CLK_BUFFER_LIST) "sky130_fd_sc_hd__clkbuf_4 sky130_fd_sc_hd__clkbuf_8"
 
 set ::env(VDD_NETS) [list {vccd1}]
 set ::env(GND_NETS) [list {vssd1}]

@@ -105,14 +105,8 @@ module user_project_wrapper #(
    vco_adc_wrapper
      vco_adc_wrapper_1 (
 `ifdef USE_POWER_PINS
-	   .vdda1(vdda1),	// User area 1 3.3V power
-	   .vdda2(vdda2),	// User area 2 3.3V power
-	   .vssa1(vssa1),	// User area 1 analog ground
-	   .vssa2(vssa2),	// User area 2 analog ground
 	   .vccd1(vccd1),	// User area 1 1.8V power
-	   .vccd2(vccd2),	// User area 2 1.8V power
 	   .vssd1(vssd1),	// User area 1 digital ground
-	   .vssd2(vssd2),	// User area 2 digital ground
 `endif
 
 	   .wb_clk_i(wb_clk_i),
@@ -161,28 +155,6 @@ module user_project_wrapper #(
            .adc2_dat_i(adc_out_2),
            .vco_enb_o(vco_enb)
 	   );
-   // assign w2m_data = adc_out;
-
-   // always @* begin
-   //    case (adc_sel)
-   // 	 2'b00: begin
-   // 	    adc_dvalid <= sinc3_dvalid[0];
-   // 	    adc_out <= adc_out_0;
-   // 	 end
-   // 	 2'b01: begin
-   // 	    adc_dvalid <= sinc3_dvalid[1];
-   // 	    adc_out <= adc_out_1;
-   // 	 end
-   // 	 2'b10: begin
-   // 	    adc_dvalid <= sinc3_dvalid[2];
-   // 	    adc_out <= adc_out_2;
-   // 	 end
-   // 	 default: begin 
-   // 	    adc_dvalid <= sinc3_dvalid[0];
-   // 	    adc_out <= adc_out_0;
-   // 	 end
-   //    endcase // case (adc_sel)
-   // end
 
    sky130_sram_2kbyte_1rw1r_32x512_8
      mem_0 (
@@ -280,8 +252,8 @@ module user_project_wrapper #(
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
-	      .vccd2(vccd2),
-	      .vssd2(vssd2),
+	      .vccd2(vccd1),
+	      .vssd2(vssd1),
 `endif
 	      .enb(vco_enb[0]),
 	      .input_analog(analog_io[9]),
@@ -301,8 +273,8 @@ module user_project_wrapper #(
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
-	      .vccd2(vccd2),
-	      .vssd2(vssd2),
+	      .vccd2(vccd1),
+	      .vssd2(vssd1),
 `endif
 	      .enb(vco_enb[1]),
 	      .input_analog(analog_io[13]),
@@ -323,8 +295,8 @@ module user_project_wrapper #(
 	  // .rst(wb_rst_i),
 	  // .enable_in(1'b1),
 `ifdef USE_POWER_PINS
-	      .vccd2(vccd2),
-	      .vssd2(vssd2),
+	      .vccd2(vccd1),
+	      .vssd2(vssd1),
 `endif
 	      .enb(vco_enb[2]),
 	      .input_analog(analog_io[15]),
