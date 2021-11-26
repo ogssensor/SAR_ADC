@@ -1,0 +1,16 @@
+diff --git a/scripts/magic/drc.tcl b/scripts/magic/drc.tcl
+index 5019f2c..18ed1da 100755
+--- a/scripts/magic/drc.tcl
++++ b/scripts/magic/drc.tcl
+@@ -13,6 +13,11 @@
+ # limitations under the License.
+ 
+ if { [info exist ::env(MAGIC_DRC_USE_GDS)] && $::env(MAGIC_DRC_USE_GDS) } {
++    if { [info exist ::env(USE_SRAM_ABSTRACT)] && $::env(USE_SRAM_ABSTRACT) } {
++	puts stdout "Use Abstract SRAM model from: $::env(SRAM_ABSTRACT_MODEL)\n"
++	load $::env(SRAM_ABSTRACT_MODEL)
++	gds noduplicates true
++    }
+ 	gds read $::env(CURRENT_GDS)
+ } else {
+ 	lef read $::env(TECH_LEF)
