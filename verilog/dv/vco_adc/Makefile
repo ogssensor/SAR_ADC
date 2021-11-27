@@ -40,13 +40,11 @@ SIM?=RTL
 
 .SUFFIXES:
 
-PATTERN = io_ports
+PATTERN = vco_adc
 
 all:  ${PATTERN:=.vcd}
 
-hex:  ${PATTERN:=.hex}
-
-%.vvp: %_tb.v %.hex
+%.vvp: %_tb.v
 ifeq ($(SIM),RTL)
 	iverilog $(SIM_DEFINES) -I $(PDK_PATH) \
 	-I $(CARAVEL_BEHAVIOURAL_MODELS) -I $(CARAVEL_RTL_PATH) \
@@ -61,17 +59,6 @@ endif
 
 %.vcd: %.vvp
 	vvp $<
-
-%.elf: %.c $(CARAVEL_FIRMWARE_PATH)/sections.lds $(CARAVEL_FIRMWARE_PATH)/start.s check-env
-	${GCC_PATH}/${GCC_PREFIX}-gcc -I $(CARAVEL_PATH) -march=rv32imc -mabi=ilp32 -Wl,-Bstatic,-T,$(CARAVEL_FIRMWARE_PATH)/sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ $(CARAVEL_FIRMWARE_PATH)/start.s $<
-
-%.hex: %.elf
-	${GCC_PATH}/${GCC_PREFIX}-objcopy -O verilog $< $@ 
-	# to fix flash base address
-	sed -i 's/@10000000/@00000000/g' $@
-
-%.bin: %.elf
-	${GCC_PATH}/${GCC_PREFIX}-objcopy -O binary $< /dev/stdout | tail -c +1048577 > $@
 
 check-env:
 ifndef PDK_ROOT
