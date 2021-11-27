@@ -40,7 +40,7 @@ SIM?=RTL
 
 .SUFFIXES:
 
-PATTERN = wb_port
+PATTERN = uart
 
 all:  ${PATTERN:=.vcd}
 
